@@ -1,6 +1,6 @@
-import React, { JSX, useState } from 'react';
+import { JSX, useState } from 'react';
 import loginService from '../services/loginService.ts';
-import { NavigateFunction, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const validation = async (ci: string, password: string) => {
   const res = await loginService(ci, password);

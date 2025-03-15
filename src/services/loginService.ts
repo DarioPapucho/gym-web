@@ -7,7 +7,6 @@ const loginService = async (ci: string, password: string): Promise<string> => {
   if (!userData.success){
     return "";
   }
-  console.log(userData.data)
 
   const res = await axios.post(
     "http://20.197.226.113:5202/api/auth",

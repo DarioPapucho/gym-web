@@ -5,6 +5,7 @@ import Employees from './pages/Employees';
 import './App.css';
 import Dashboard from './pages/DashBoard';
 import Members from './pages/Members';
+import GymEntryLog from './pages/GymEntryLog';
 
 
 
@@ -17,6 +18,9 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route element={<ProtectedRoute children={<Employees />} />}>
           <Route path="/employees" element={<Employees />} />
+        </Route>
+        <Route element={<ProtectedRoute children={<GymEntryLog />} />}>
+          <Route path="/gymEntrylog" element={<GymEntryLog />} />
         </Route>
       </Routes>
     </Router>

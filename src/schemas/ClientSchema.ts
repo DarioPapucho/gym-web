@@ -3,7 +3,7 @@ import { z } from "zod";
 const ClientSchema = z.object({
   id: z.number().optional(),
   name: z.string(),
-  lastName: z.string(),
+  lastname: z.string(),
   username: z.string(),
   password: z.string(),
   phone: z.string(),

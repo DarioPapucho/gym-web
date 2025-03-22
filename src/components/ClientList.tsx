@@ -66,7 +66,7 @@ const ClientList = () => {
                 key={client.id}
                 className="border-b border-gray-200 hover:bg-gray-50 transition duration-200"
               >
-                <td className="py-3 px-6">{client.name + " " + client.lastName}</td>
+                <td className="py-3 px-6">{client.name + " " + client.lastname}</td>
                 <td className="py-3 px-6">{client.phone}</td>
                 <td className="py-3 px-6">{client.streak}</td>
                 <td className="py-3 px-6">

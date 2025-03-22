@@ -13,7 +13,7 @@ interface ModalCreateClientProps {
   function ModalCreateClient({ isOpen, onClose, onSave }: ModalCreateClientProps) {
     const [newClient, setNewClient] = useState({
       name: "",
-      lastName: "",
+      lastname: "",
       username: "",
       password: "",
       phone: "",
@@ -45,6 +45,7 @@ interface ModalCreateClientProps {
   
     const handleSave = async () => {
       try {
+        console.log(newClient);
         const validatedData = Client.parse(newClient);
         console.log(validatedData);
         const createdClient = await createClient(validatedData);

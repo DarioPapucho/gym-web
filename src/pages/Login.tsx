@@ -1,9 +1,9 @@
 import { JSX, useState } from 'react';
-import loginService from '../services/loginService.ts';
+import LoginService from '../services/AuthService';
 import { useNavigate } from 'react-router-dom';
 
 const validation = async (ci: string, password: string) => {
-  const res = await loginService(ci, password);
+  const res = await LoginService.login(ci, password);
   
   if (res === "") {
     return;

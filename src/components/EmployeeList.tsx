@@ -4,7 +4,7 @@ import axios from 'axios';
 import EditEmployeButton from './EditEmployeButton';
 import CreateEmployeeButton from './CreateEmployeeButton';
 import Modal from './Modal';
-import CreateEmployee from '../services/createEmployee';
+import EmployeeService from '../services/EmployeeService';
 import DeleteEmployeeButton from './DeleteEmployeButton';
 
 const EmployeeList = () => {
@@ -92,7 +92,7 @@ const EmployeeList = () => {
         </table>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={toggleModal} onSave={CreateEmployee} />
+      <Modal isOpen={isModalOpen} onClose={toggleModal} onSave={EmployeeService.createEmployee} />
     </div>
   );
 };

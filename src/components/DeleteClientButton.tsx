@@ -1,4 +1,4 @@
-import deleteClient from "../services/DeleteClient";
+import ClientService from "../services/ClientService";
 
 interface DeleteClientButtonProps {
   clientId: number;
@@ -6,7 +6,7 @@ interface DeleteClientButtonProps {
 
 function DeleteClientButton({ clientId }: DeleteClientButtonProps) {
   const handleDelete = async () => {
-    const response = await deleteClient(clientId);
+    const response = await ClientService.delete(clientId);
     console.log(response);
   };
 

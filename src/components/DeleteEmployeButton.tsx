@@ -1,5 +1,5 @@
 import { useState } from "react";
-import deleteEmployee from "../services/DeleteEmployee";
+import EmployeeService from "../services/EmployeeService";
 import ConfirmModal from "./ConfirmModal";
 
 interface DeleteEmployeeButtonProps {
@@ -9,7 +9,7 @@ function DeleteEmployeeButton({ employeeId }: DeleteEmployeeButtonProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleDelete = async () => {
-        const response = await deleteEmployee(employeeId);
+        const response = await EmployeeService.deleteEmployee(employeeId);
         console.log(response);
     }
 

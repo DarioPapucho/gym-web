@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Employee from "../schemas/Employee";
-import { updateEmployee } from "../services/updateEmployee";
+import  EmployeeService  from "../services/EmployeeService";
 
 interface ModalEmployeeProps {
   EmployeeInformation: Employee;
@@ -29,7 +29,7 @@ function ModalEmployee({ EmployeeInformation: employeeInfo, isOpen, onClose, onS
   const handleSave = async () => {
     try {
       console.log(editedEmployee);
-      const updatedEmployee = await updateEmployee(editedEmployee);
+      const updatedEmployee = await EmployeeService.updateEmployee(editedEmployee);
       onSave(updatedEmployee);
       onClose();
     } catch (error) {

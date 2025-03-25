@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { EmployeeUpdate, EmployeeUpdateSchema } from "../schemas/EmployeeEschema";
-import CreateEmployee from "../services/createEmployee";
+import EmployeeService from "../services/EmployeeService";
 
 interface ModalCreateEmployeeProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ function ModalCreateEmployee({ isOpen, onClose, onSave }: ModalCreateEmployeePro
     try {
       const validatedData = EmployeeUpdateSchema.parse(newEmployee);
       console.log(validatedData);
-      const createdEmployee = await CreateEmployee(validatedData);
+      const createdEmployee = await EmployeeService.createEmployee(validatedData);
       onSave(createdEmployee);
       onClose();
     } catch (error) {

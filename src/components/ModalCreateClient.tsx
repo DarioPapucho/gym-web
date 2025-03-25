@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ClientSchema from "../schemas/ClientSchema";
 import { z } from 'zod';
-import createClient from "../services/createClient";
+import ClientService from "../services/ClientService";
 import Client from "../schemas/Client";
 
 interface ModalCreateClientProps {
@@ -48,7 +48,7 @@ interface ModalCreateClientProps {
         console.log(newClient);
         const validatedData = Client.parse(newClient);
         console.log(validatedData);
-        const createdClient = await createClient(validatedData);
+        const createdClient = await ClientService.createClient(validatedData);
         onSave(createdClient);
         onClose();
       } catch (error) {

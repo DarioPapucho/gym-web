@@ -1,7 +1,15 @@
-import { Link } from 'react-router-dom';
-import { FaUserFriends, FaUserTie, FaHome, FaRegUserCircle, FaUserCircle } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaUserFriends, FaUserTie, FaHome, FaUserCircle, FaSignOutAlt  } from 'react-icons/fa';
 
 const Navbar = () => {
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('authGimToken');
+    navigate('/login'); 
+  };
+
   return (
     <nav className="bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 p-4 shadow-lg">
       <div className="container mx-auto flex justify-between items-center">
@@ -22,6 +30,13 @@ const Navbar = () => {
             <FaUserCircle />
             <span>Registro de ingreso al gym</span>
           </Link>
+          <button 
+            onClick={handleLogout} 
+            className="flex items-center space-x-1 hover:text-gray-300 text-white transition duration-200"
+          >
+            <FaSignOutAlt />
+            <span>Salir</span>
+          </button>
         </div>
       </div>
     </nav>

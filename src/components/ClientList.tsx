@@ -1,91 +1,352 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { z } from 'zod';
-import CreateClientButton from './CreateClientButton';
-import DeleteClientButton from './DeleteClientButton';
-import ModalCreateClient from './ModalCreateClient'; // Asegúrate de importar el modal correcto
-import ClientSchema from '../schemas/ClientSchema';
+import React, { useState, useEffect } from 'react';
+import { message, Form, Card, Button, Spin } from 'antd';
+import { FaPlus, FaUserPlus, FaHistory } from 'react-icons/fa';
+import { ColumnsType } from 'antd/es/table';
+import dayjs from 'dayjs';
+import DataTable from './DataTable';
+import MemberForm from './MemberForm';
+import MembershipForm from './MembershipForm';
+import MembershipHistory from './MembershipHistory';
+import MembersService, { Member, MemberInput, MemberUpdateInput, MembershipInput } from '../services/MemberService';
+import MembershipPlansService, { MembershipPlan } from '../services/MembershipPlanService';
 
-type Client = z.infer<typeof ClientSchema>;
+const ClientList: React.FC = () => {
+  // Estados
+  const [memberForm] = Form.useForm();
+  const [membershipForm] = Form.useForm();
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [memberModalVisible, setMemberModalVisible] = useState<boolean>(false);
+  const [membershipModalVisible, setMembershipModalVisible] = useState<boolean>(false);
+  const [allMembershipsModalVisible, setAllMembershipsModalVisible] = useState<boolean>(false);
+  const [loadingMember, setLoadingMember] = useState<boolean>(false);
+  const [loadingMembership, setLoadingMembership] = useState<boolean>(false);
+  const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
+  const [memberMemberships, setMemberMemberships] = useState<any[]>([]);
+  const [tableLoading, setTableLoading] = useState<boolean>(true);
+  const [membersData, setMembersData] = useState<Member[]>([]);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const [loadingMembershipPlans, setLoadingMembershipPlans] = useState<boolean>(false);
 
-const ClientList = () => {
-  const [clients, setClients] = useState<Client[]>([]); 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Definición de columnas
+  const columns: ColumnsType<Member> = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: '8%',
+    },
+    {
+      title: 'Nombre',
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: 'Apellido',
+      dataIndex: 'lastname',
+      key: 'lastname',
+      sorter: (a, b) => a.lastname.localeCompare(b.lastname),
+    },
+    {
+      title: 'Usuario',
+      dataIndex: 'username',
+      key: 'username',
+    },
+    {
+      title: 'Teléfono',
+      dataIndex: 'phone',
+      key: 'phone',
+    },
+    {
+      title: 'Membresía',
+      key: 'membership',
+      render: (_, record) => {
+        const activeMemberships = record.membership && record.membership.length > 0 
+          ? record.membership.filter(m => {
+              const finishDate = new Date(m.finishDate);
+              return finishDate > new Date();
+            }) 
+          : [];
+        
+        return activeMemberships.length > 0 
+          ? 'Activa' 
+          : 'Sin membresía';
+      },
+      filters: [
+        { text: 'Con membresía', value: 'active' },
+        { text: 'Sin membresía', value: 'inactive' },
+      ],
+      onFilter: (value, record) => {
+        const hasMembership = record.membership && record.membership.length > 0 &&
+          record.membership.some(m => {
+            const finishDate = new Date(m.finishDate);
+            return finishDate > new Date();
+          });
+        
+        return value === 'active' ? hasMembership : !hasMembership;
+      },
+    },
+  ];
 
-  const token = localStorage.getItem("authGimToken");
-
+  // Cargar miembros al inicio
   useEffect(() => {
-    axios
-      .get('http://20.197.226.113:5202/api/clients', {
-        headers: { Authorization: "Bearer " + token }
-      })
-      .then(response => {
-        setClients(response.data);
-        console.log(response.data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Hubo un error al cargar los clientes');
-        setLoading(false);
+    loadMembers(pagination.current, pagination.pageSize);
+  }, []);
+
+  // Efecto para cargar planes de membresía cuando se abre el modal
+  useEffect(() => {
+    if (membershipModalVisible) {
+      fetchMembershipPlans();
+    }
+  }, [membershipModalVisible]);
+
+  // Función para cargar miembros
+  const loadMembers = async (page: number, pageSize: number) => {
+    setTableLoading(true);
+    try {
+      const response = await MembersService.getAll(page, pageSize);
+      setMembersData(response.data || []);
+      setPagination({
+        ...pagination,
+        current: page,
+        pageSize: pageSize,
+        total: response.total || response.data.length,
       });
-  }, [token]);
-
-  const toggleModal = () => setIsModalOpen(!isModalOpen);
-
-  const handleSaveClient = (newClient: Client) => {
-    setClients(prevClients => [...prevClients, newClient]); // Actualizar la lista de clientes con el nuevo cliente
+    } catch (error) {
+      console.error('Error al cargar clientes:', error);
+      message.error('No se pudieron cargar los clientes');
+    } finally {
+      setTableLoading(false);
+    }
   };
 
-  if (loading) return <p className="text-center text-lg">Cargando...</p>;
-  if (error) return <p className="text-center text-red-500">{error}</p>;
+  // Función para manejar cambios en la tabla
+  const handleTableChange = (newPagination: any) => {
+    loadMembers(newPagination.current, newPagination.pageSize);
+  };
+
+  // Función para obtener planes de membresía
+  const fetchMembershipPlans = async () => {
+    setLoadingMembershipPlans(true);
+    try {
+      const response = await MembershipPlansService.getAll(1, 100);
+      setMembershipPlans(response.data || []);
+    } catch (error) {
+      console.error('Error al obtener planes de membresía:', error);
+      message.error('No se pudieron cargar los planes de membresía');
+    } finally {
+      setLoadingMembershipPlans(false);
+    }
+  };
+
+  // Función para abrir el modal en modo creación
+  const handleCreateMember = () => {
+    setEditingMember(null);
+    memberForm.resetFields();
+    setMemberModalVisible(true);
+  };
+
+  // Función para abrir el modal en modo edición
+  const handleEditMember = (member: Member) => {
+    setEditingMember(member);
+    memberForm.setFieldsValue({
+      name: member.name,
+      lastname: member.lastname,
+      username: member.username,
+      phone: member.phone,
+      // No establecemos la contraseña por seguridad
+    });
+    setMemberModalVisible(true);
+  };
+
+  // Función para eliminar un miembro
+  const handleDeleteMember = async (member: Member) => {
+    setTableLoading(true);
+    try {
+      await MembersService.delete(member.id);
+      message.success('Cliente eliminado correctamente');
+      loadMembers(pagination.current, pagination.pageSize);
+      return true;
+    } catch (error) {
+      console.error('Error al eliminar cliente:', error);
+      message.error('Error al eliminar el cliente');
+      setTableLoading(false);
+      return false;
+    }
+  };
+
+  // Función para guardar un miembro (crear o actualizar)
+  const handleSaveMember = async () => {
+    try {
+      await memberForm.validateFields();
+      
+      setLoadingMember(true);
+      const values = memberForm.getFieldsValue();
+      
+      if (editingMember) {
+        // Actualizar miembro existente
+        const updateData: MemberUpdateInput = {
+          ...values,
+          password: values.password || editingMember.password, // Si no se cambia la contraseña, usar la existente
+          streak: editingMember.streak,
+          lastUpdate: new Date().toISOString()
+        };
+        
+        await MembersService.update(editingMember.id, updateData);
+        message.success('Cliente actualizado correctamente');
+      } else {
+        // Crear nuevo miembro
+        const newMember: MemberInput = values;
+        await MembersService.create(newMember);
+        message.success('Cliente creado correctamente');
+      }
+      
+      setMemberModalVisible(false);
+      memberForm.resetFields();
+      setEditingMember(null);
+      loadMembers(pagination.current, pagination.pageSize);
+    } catch (error) {
+      console.error('Error al guardar cliente:', error);
+      message.error('Error al guardar el cliente');
+    } finally {
+      setLoadingMember(false);
+    }
+  };
+
+  // Función para abrir modal de membresía
+  const openMembershipModal = (member: Member) => {
+    setSelectedMember(member);
+    setMembershipModalVisible(true);
+    membershipForm.resetFields();
+    
+    // Establecer fechas por defecto
+    const today = dayjs();
+    membershipForm.setFieldsValue({
+      initDate: today,
+    });
+  };
+
+  // Función para manejar cambio de plan
+  const handlePlanChange = (planId: number) => {
+    const selectedPlan = membershipPlans.find(plan => plan.id === planId);
+    if (selectedPlan) {
+      const startDate = membershipForm.getFieldValue('initDate') || dayjs();
+      const endDate = dayjs(startDate).add(selectedPlan.days, 'day');
+      membershipForm.setFieldsValue({ 
+        finishDate: endDate,
+        amount: selectedPlan.amount
+      });
+    }
+  };
+
+  // Función para guardar membresía
+  const handleSaveMembership = async () => {
+    try {
+      await membershipForm.validateFields();
+      const formValues = membershipForm.getFieldsValue();
+      
+      if (!selectedMember) return;
+      
+      setLoadingMembership(true);
+      
+      const newMembership: MembershipInput = {
+        clientId: selectedMember.id,
+        amount: formValues.amount,
+        initDate: formValues.initDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+        finishDate: formValues.finishDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+      };
+      
+      await MembersService.addMembership(newMembership);
+      
+      message.success(`Membresía asignada correctamente a ${selectedMember.name}`);
+      setMembershipModalVisible(false);
+      // Recargar los datos para mostrar la nueva membresía
+      loadMembers(pagination.current, pagination.pageSize);
+    } catch (error) {
+      console.error('Error al guardar membresía:', error);
+      message.error('Error al asignar membresía');
+    } finally {
+      setLoadingMembership(false);
+    }
+  };
+
+  // Función para ver todas las membresías
+  const viewAllMemberships = (member: Member) => {
+    setSelectedMember(member);
+    setMemberMemberships(member.membership || []);
+    setAllMembershipsModalVisible(true);
+  };
+
+  // Elementos para menú contextual
+  const contextMenuItems = (member: Member) => [
+    {
+      key: 'addMembership',
+      label: 'Agregar Membresía',
+      icon: <FaUserPlus />,
+      onClick: () => openMembershipModal(member),
+    },
+    {
+      key: 'viewMemberships',
+      label: 'Ver todas las membresías',
+      icon: <FaHistory />,
+      onClick: () => viewAllMemberships(member),
+    },
+  ];
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold text-center mb-6">Listado de Clientes</h1>
-
-      <div className="flex justify-end mb-4">
-        <CreateClientButton toggleModal={toggleModal} />
-      </div>
-
-      <div className="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
-        <table className="min-w-full bg-white rounded-lg overflow-hidden">
-          <thead className="bg-gray-100 text-gray-700 uppercase text-sm leading-normal">
-            <tr>
-              <th className="py-3 px-6 text-left">Nombre Completo</th>
-              <th className="py-3 px-6 text-left">Número</th>
-              <th className="py-3 px-6 text-left">Streak</th>
-              <th className="py-3 px-6 text-left">Estado de Membresía</th>
-              <th className="py-3 px-6 text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="text-gray-600 text-sm font-light">
-            {clients.map((client) => (
-              <tr
-                key={client.id}
-                className="border-b border-gray-200 hover:bg-gray-50 transition duration-200"
-              >
-                <td className="py-3 px-6">{client.name + " " + client.lastname}</td>
-                <td className="py-3 px-6">{client.phone}</td>
-                <td className="py-3 px-6">{client.streak}</td>
-                <td className="py-3 px-6">
-                  {/* Aquí deberías colocar la lógica para mostrar el estado de la membresía */}
-                </td>
-                <td className="py-3 px-6 text-center">
-                  <DeleteClientButton clientId={client.id} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal de Crear Cliente */}
-      <ModalCreateClient
-        isOpen={isModalOpen}
-        onClose={toggleModal}
-        onSave={handleSaveClient}
+    <div className="container mx-auto px-4 py-6">
+      <Card title="Gestión de Clientes" extra={
+        <Button 
+          type="primary" 
+          onClick={handleCreateMember}
+          disabled={tableLoading}
+        >
+          <FaPlus className="mr-2" /> Nuevo Cliente
+        </Button>
+      }>
+        <DataTable<Member>
+          data={membersData}
+          columns={columns}
+          onEdit={handleEditMember}
+          onDelete={handleDeleteMember}
+          enableContextMenu={true}
+          contextMenuItems={contextMenuItems}
+          rowKey="id"
+          loading={tableLoading}
+          onTableChange={handleTableChange}
+          total={pagination.total}
+        />
+      </Card>
+      
+      {/* Componentes modales */}
+      <MemberForm 
+        visible={memberModalVisible}
+        editingMember={editingMember}
+        loading={loadingMember}
+        onCancel={() => setMemberModalVisible(false)}
+        onSave={handleSaveMember}
+        form={memberForm}
+      />
+      
+      <Spin spinning={loadingMembershipPlans} tip="Cargando planes...">
+        <MembershipForm 
+          visible={membershipModalVisible}
+          selectedMember={selectedMember}
+          membershipPlans={membershipPlans}
+          loading={loadingMembership}
+          form={membershipForm}
+          onCancel={() => setMembershipModalVisible(false)}
+          onSave={handleSaveMembership}
+          onPlanChange={handlePlanChange}
+        />
+      </Spin>
+      
+      <MembershipHistory 
+        visible={allMembershipsModalVisible}
+        selectedMember={selectedMember}
+        memberships={memberMemberships}
+        onClose={() => setAllMembershipsModalVisible(false)}
       />
     </div>
   );

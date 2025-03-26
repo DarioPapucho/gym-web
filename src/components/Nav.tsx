@@ -30,6 +30,10 @@ const Navbar = () => {
             <FaUserCircle />
             <span>Registro de ingreso al gym</span>
           </Link>
+          <Link to="/membership-plans" className="flex items-center space-x-1 hover:text-gray-300 text-white transition duration-200">
+            <FaUserCircle />
+            <span>Planes de membresía</span>
+          </Link>
           <button 
             onClick={handleLogout} 
             className="flex items-center space-x-1 hover:text-gray-300 text-white transition duration-200"

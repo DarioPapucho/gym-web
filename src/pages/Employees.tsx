@@ -1,16 +1,11 @@
-
-import React, { JSX } from "react"
-import EmployeeList from "../components/EmployeeList"
 import Navbar from "../components/Nav"
 
 
-function Employees() :JSX.Element {
+function Employees() {
     return (
-        <React.Fragment>
-                <Navbar/>
-                <EmployeeList />
-        </React.Fragment>
-       
+        <>
+            <Navbar/>
+        </>
     )
 }
 

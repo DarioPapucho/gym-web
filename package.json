@@ -12,7 +12,9 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.0.14",
     "@types/react-router-dom": "^5.3.3",
+    "antd": "^5.24.5",
     "axios": "^1.8.3",
+    "dayjs": "^1.11.13",
     "install": "^0.13.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

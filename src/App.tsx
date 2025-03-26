@@ -6,6 +6,7 @@ import './App.css';
 import Dashboard from './pages/DashBoard';
 import Members from './pages/Members';
 import GymEntryLog from './pages/GymEntryLog';
+import MembershipPlan from './pages/MembershipPlan';
 
 
 
@@ -19,6 +20,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
         <Route path="/gymEntrylog" element={<ProtectedRoute><GymEntryLog /></ProtectedRoute>} />
+        <Route path="/membership-plans" element={<ProtectedRoute><MembershipPlan /></ProtectedRoute>} />
 
       </Routes>
     </BrowserRouter>

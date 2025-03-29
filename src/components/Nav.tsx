@@ -9,6 +9,9 @@ const Navbar = () => {
     localStorage.removeItem('authGimToken');
     navigate('/login'); 
   };
+  const openAccessControlWindow = () => {
+    window.open('/access-control', '_blank', 'width=1024,height=768');
+  };
 
   return (
     <nav className="bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 p-4 shadow-lg">
@@ -26,14 +29,18 @@ const Navbar = () => {
             <FaUserTie />
             <span>Empleados</span>
           </Link>
-          <Link to="/gymEntrylog" className="flex items-center space-x-1 hover:text-gray-300 text-white transition duration-200">
-            <FaUserCircle />
-            <span>Registro de ingreso al gym</span>
-          </Link>
+          
           <Link to="/membership-plans" className="flex items-center space-x-1 hover:text-gray-300 text-white transition duration-200">
             <FaUserCircle />
             <span>Planes de membresía</span>
           </Link>
+          <button 
+            onClick={openAccessControlWindow} 
+            className="flex items-center space-x-1 hover:text-gray-300 text-white transition duration-200"
+          >
+            <FaUserCircle />
+            <span>Control de acceso</span>
+          </button>
           <button 
             onClick={handleLogout} 
             className="flex items-center space-x-1 hover:text-gray-300 text-white transition duration-200"

@@ -5,7 +5,7 @@ import Employees from './pages/Employees';
 import './App.css';
 import Dashboard from './pages/DashBoard';
 import Members from './pages/Members';
-import GymEntryLog from './pages/GymEntryLog';
+import AccesControlPage from './pages/AccesControl';
 import MembershipPlan from './pages/MembershipPlan';
 
 
@@ -19,9 +19,8 @@ function App() {
         <Route path="/members" element={<Members/>} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-        <Route path="/gymEntrylog" element={<ProtectedRoute><GymEntryLog /></ProtectedRoute>} />
         <Route path="/membership-plans" element={<ProtectedRoute><MembershipPlan /></ProtectedRoute>} />
-
+        <Route path="/access-control" element={<ProtectedRoute><AccesControlPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )

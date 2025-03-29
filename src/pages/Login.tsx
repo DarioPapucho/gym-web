@@ -26,7 +26,7 @@ function Login(): JSX.Element {
     const res = await validation(ci, password);
     
     if (res) {
-      navigate('/employees');
+      navigate('/dashboard');
     }
     
     setTimeout(() => setIsCooldown(false), 3000);

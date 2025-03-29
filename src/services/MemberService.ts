@@ -50,6 +50,7 @@ export interface MemberUpdateInput {
 // Tipo para una nueva membresía de cliente
 export interface MembershipInput {
   amount: number;
+  name: string;
   initDate: string;
   finishDate: string;
   clientId: number;

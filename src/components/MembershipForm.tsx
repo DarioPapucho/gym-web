@@ -2,6 +2,7 @@ import React from 'react';
 import { Form, InputNumber, DatePicker, Button, Modal, FormInstance } from 'antd';
 import { Member } from '../services/MemberService';
 import { MembershipPlan } from '../services/MembershipPlanService';
+import Input from 'antd/es/input/Input';
 
 interface MembershipFormProps {
   visible: boolean;
@@ -59,7 +60,7 @@ const MembershipForm: React.FC<MembershipFormProps> = ({
             <option value="">Seleccione un plan</option>
             {membershipPlans.map(plan => (
               <option key={plan.id} value={plan.id}>
-                {plan.type} - ${plan.amount} ({plan.days} días)
+                {plan.type} - {plan.amount} Bs. ({plan.days} días)
               </option>
             ))}
           </select>
@@ -70,16 +71,28 @@ const MembershipForm: React.FC<MembershipFormProps> = ({
           label="Monto"
           rules={[{ required: true, message: 'Ingrese el monto' }]}
         >
-          <InputNumber
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <InputNumber
+              style={{ width: "100%" }}
+              min={0}
+              precision={2}
+              placeholder="Ej: 150.00"
+              disabled={loading}
+            />
+            <span>Bs.</span>
+          </div>
+
+        </Form.Item>
+        <Form.Item
+          name="name"
+          label="Nombre del Plan"
+          rules={[{ required: true, message: 'Ingrese el nombre del plan' }]}
+        >
+          <Input
             style={{ width: '100%' }}
-            formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
-            min={0}
-            precision={2}
-            placeholder="Ej: 150.00"
+            placeholder="Ej: Mensual"
           />
         </Form.Item>
-        
         <Form.Item
           name="initDate"
           label="Fecha de Inicio"

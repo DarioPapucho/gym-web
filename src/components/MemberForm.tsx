@@ -60,8 +60,15 @@ const MemberForm: React.FC<MemberFormProps> = ({
         
         <Form.Item
           name="username"
-          label="Usuario/CI"
-          rules={[{ required: true, message: 'Por favor ingrese el nombre de usuario o CI' }]}
+          label="Usuario"
+          rules={[{ required: true, message: 'Por favor ingrese el nombre de usuario' }]}
+        >
+          <Input placeholder="Ej: UsuarioJuan" />
+        </Form.Item>
+        <Form.Item
+          name="ci"
+          label="Cedula de Identidad"
+          rules={[{ required: true, message: 'Por favor ingrese la cedula de identidad' }]}
         >
           <Input placeholder="Ej: 12345678" />
         </Form.Item>
@@ -80,6 +87,13 @@ const MemberForm: React.FC<MemberFormProps> = ({
           rules={[{ required: true, message: 'Por favor ingrese el teléfono' }]}
         >
           <Input placeholder="Ej: 70123456" />
+        </Form.Item>
+        <Form.Item
+          name="photoUrl"
+          label="Foto de Perfil"
+          rules={[{ required: true, message: 'Por favor ingrese foto del usuario' }]}
+        >
+          <Input placeholder="Ej: http://domain.com/photos/image.png" />
         </Form.Item>
       </Form>
     </Modal>

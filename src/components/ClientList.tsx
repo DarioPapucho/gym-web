@@ -234,6 +234,7 @@ const ClientList: React.FC = () => {
       const startDate = membershipForm.getFieldValue('initDate') || dayjs();
       const endDate = dayjs(startDate).add(selectedPlan.days, 'day');
       membershipForm.setFieldsValue({ 
+        name: selectedPlan.type,
         finishDate: endDate,
         amount: selectedPlan.amount
       });
@@ -251,6 +252,7 @@ const ClientList: React.FC = () => {
       setLoadingMembership(true);
       
       const newMembership: MembershipInput = {
+        name: formValues.name,
         clientId: selectedMember.id,
         amount: formValues.amount,
         initDate: formValues.initDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),

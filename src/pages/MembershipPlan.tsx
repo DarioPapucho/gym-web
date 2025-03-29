@@ -33,7 +33,7 @@ function MembershipPlanPage() {
       title: 'Precio',
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount) => `$${amount.toFixed(2)}`,
+      render: (amount) => `${amount.toFixed(2)} Bs.`,
       sorter: (a, b) => a.amount - b.amount,
     },
     {
@@ -197,15 +197,17 @@ function MembershipPlanPage() {
                 label="Precio"
                 rules={[{ required: true, message: 'Por favor ingrese el precio' }]}
               >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
-                  min={0}
-                  precision={2}
-                  placeholder="Ej: 150.00"
-                  disabled={loading}
-                />
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <InputNumber
+                    style={{ width: "100%" }}
+                    min={0}
+                    precision={2}
+                    placeholder="Ej: 150.00"
+                    disabled={loading}
+                  />
+                  <span>Bs.</span>
+                </div>
+
               </Form.Item>
               
               <Form.Item

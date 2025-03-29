@@ -11,8 +11,9 @@ export interface MembershipPlan {
 
 export interface MembershipPlanInput {
   type: string;
+  name: string;
   amount: number;
-  days: number;
+  days: number; 
 }
 
 const getAuthToken = (): string => {

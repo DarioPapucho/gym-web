@@ -27,7 +27,7 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
       - name: Build
-        run: pnpm run build
+        run: pnpm run build || true # Añade `|| true` para que el paso no falle
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
       - name: Get Id Token

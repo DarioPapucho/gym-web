@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { Clock, Calendar, User, CheckCircle, Wifi, WifiOff, ArrowRightCircle, XCircle, Trash } from "lucide-react"
 
 const API_URL = "http://20.197.229.78:5202/api/clients/enter-the-gym"
+const IMAGES_BASE_URL = import.meta.env.VITE_IMAGES_BASE_URL;
 
 const AccessControlPage = () => {
   const [ipAddress, setIpAddress] = useState("")
@@ -303,9 +304,9 @@ const AccessControlPage = () => {
                 <div className="space-y-4">
                   {userData.userPhotoUrl ? (
                     <div className="flex justify-center mb-4">
-                      <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-yellow-400">
+                      <div className="w-50 h-50 rounded-full overflow-hidden border-2 border-yellow-400">
                         <img
-                          src={userData.userPhotoUrl || "/placeholder.svg"}
+                          src={IMAGES_BASE_URL + "/uploads/" +userData.userPhotoUrl || "/placeholder.svg"}
                           alt={`Foto de ${userData.name}`}
                           className="w-full h-full object-cover"
                           onError={(e) => {

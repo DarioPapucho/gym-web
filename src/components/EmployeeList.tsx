@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { message, Form, Card, Button, Spin } from 'antd';
+import { message, Form, Card, Button } from 'antd';
 import { FaPlus, FaMoneyBillWave, FaHistory } from 'react-icons/fa';
 import axios from 'axios';
 import { ColumnsType } from 'antd/es/table';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { message, Form, Card, Button, Spin } from 'antd';
-import { FaPlus, FaUserPlus, FaHistory } from 'react-icons/fa';
+import { message, Form, Card, Button, Spin, Avatar } from 'antd';
+import { FaPlus, FaUserPlus, FaHistory, FaUser } from 'react-icons/fa';
 import { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import DataTable from './DataTable';
@@ -9,7 +9,7 @@ import MembershipForm from './MembershipForm';
 import MembershipHistory from './MembershipHistory';
 import MembersService, { Member, MemberInput, MemberUpdateInput, MembershipInput } from '../services/MemberService';
 import MembershipPlansService, { MembershipPlan } from '../services/MembershipPlanService';
-
+const IMAGES_BASE_URL= import.meta.env.VITE_IMAGES_BASE_URL;
 const ClientList: React.FC = () => {
   // Estados
   const [memberForm] = Form.useForm();
@@ -35,6 +35,18 @@ const ClientList: React.FC = () => {
       dataIndex: 'id',
       key: 'id',
       width: '8%',
+    },
+    {
+      title: 'Foto',
+      key: 'profileImage',
+      width: '10%',
+      render: (_, record) => (
+        <Avatar 
+          src={IMAGES_BASE_URL + record.photo?.filePath} 
+          icon={<FaUser />} 
+          size="large" 
+        />
+      )
     },
     {
       title: 'Nombre',
@@ -155,6 +167,7 @@ const ClientList: React.FC = () => {
       lastname: member.lastname,
       username: member.username,
       phone: member.phone,
+      photoId: member.photo?.fileName,
       // No establecemos la contraseña por seguridad
     });
     setMemberModalVisible(true);
@@ -188,7 +201,7 @@ const ClientList: React.FC = () => {
         // Actualizar miembro existente
         const updateData: MemberUpdateInput = {
           ...values,
-          password: values.password || editingMember.password, // Si no se cambia la contraseña, usar la existente
+          password: values.password || undefined, // Solo enviar si se cambia
           streak: editingMember.streak,
           lastUpdate: new Date().toISOString()
         };

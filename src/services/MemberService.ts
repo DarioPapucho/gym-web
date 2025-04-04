@@ -24,6 +24,11 @@ export interface Member {
   membership: Membership[];
   lastUpdate: string;
   workoutPlanTemplateId?: number;
+  photo?: {
+    id: string;
+    fileName: string;
+    filePath: string;
+  };
 }
 
 // Tipo para crear un nuevo Member
@@ -33,6 +38,11 @@ export interface MemberInput {
   username: string;
   password: string;
   phone: string;
+  photo?: {
+    id: string;
+    fileName: string;
+    filePath: string;
+  };
 }
 
 // Tipo para actualizar un Member
@@ -45,6 +55,11 @@ export interface MemberUpdateInput {
   streak: number;
   workoutPlanTemplateId?: number;
   lastUpdate: string;
+  photo?: {
+    id: string;
+    fileName: string;
+    filePath: string;
+  };
 }
 
 // Tipo para una nueva membresía de cliente

@@ -219,25 +219,48 @@ const EmployeeList: React.FC = () => {
     }
   };
 
-  // Save employee (create or update)
   const handleSaveEmployee = async () => {
     try {
-      await employeeForm.validateFields();
-      
-      setLoadingEmployee(true);
+      // Only validate the fields that have values
       const values = employeeForm.getFieldsValue();
+      const touchedFields = employeeForm.getFieldsValue(true);
+      const fieldsToValidate = Object.keys(touchedFields);
+      
+      await employeeForm.validateFields(fieldsToValidate);
+      setLoadingEmployee(true);
       
       if (editingEmployee) {
-        // Update existing employee
-        const updateData: Employee = {
-          ...editingEmployee,
-          ...values,
-          lastPayment: editingEmployee.lastPayment, // Preserve lastPayment
+        // Update existing employee - only send changed fields
+        const updateData: Partial<Employee> = {
+          id: editingEmployee.id
         };
+        
+        // Only add fields that have been changed
+        Object.keys(values).forEach(key => {
+          if (values[key] !== undefined && values[key] !== null && values[key] !== '') {
+            // Handle type conversions for numeric fields
+            if (key === 'salary' || key === 'workInDays') {
+              updateData[key] = Number(values[key]);
+            } else {
+              updateData[key] = values[key];
+            }
+          }
+        });
+        
+        // Don't send empty password
+        if (updateData.password === '') {
+          delete updateData.password;
+        }
         
         await EmployeeService.updateEmployee(updateData);
         message.success('Empleado actualizado correctamente');
       } else {
+        // Validate all required fields for new employee
+        await employeeForm.validateFields([
+          'name', 'lastname', 'ci', 'phone', 'password', 
+          'salary', 'workInDays', 'ocupation'
+        ]);
+        
         // Create new employee
         const newEmployee: EmployeeInput = {
           ...values,
@@ -254,7 +277,11 @@ const EmployeeList: React.FC = () => {
       loadEmployees(pagination.current, pagination.pageSize);
     } catch (error) {
       console.error('Error al guardar empleado:', error);
-      message.error('Error al guardar el empleado');
+      if (error instanceof Error) {
+        message.error(`Error al guardar el empleado: ${error.message}`);
+      } else {
+        message.error('Error al guardar el empleado');
+      }
     } finally {
       setLoadingEmployee(false);
     }

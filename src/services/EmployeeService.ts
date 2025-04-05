@@ -19,29 +19,36 @@ class EmployeeService {
     }
   }
 
-  async updateEmployee(employee: Employee): Promise<Employee> {
-    const employeeData: EmployeeUpdate = EmployeeUpdateSchema.parse({
-      name: employee.name,
-      lastname: employee.lastname,
-      password: employee.password,
-      ci: employee.ci,
-      phone: employee.phone,
-      salary: employee.salary,
-      lastPayment: employee.lastPayment,
-      workInDays: employee.workInDays,
-      ocupation: employee.ocupation,
-    });
-
-    const response = await axios.put(
-      `${this.baseUrl}/${employee.id}`, 
-      { 
-        ...employeeData, 
-        lastPayment: employeeData.lastPayment.toISOString() 
-      }
-    );
-    
-    console.log("Updated employee data:", employeeData);
-    return response.data;
+  async updateEmployee(employee: Partial<Employee>): Promise<Employee> {
+    try {
+      // Only include fields that are provided in the update
+      const updateData: any = {};
+      
+      // Only add fields that are present in the employee object
+      if (employee.name !== undefined) updateData.name = employee.name;
+      if (employee.lastname !== undefined) updateData.lastname = employee.lastname;
+      if (employee.password !== undefined && employee.password !== "") updateData.password = employee.password;
+      if (employee.ci !== undefined) updateData.ci = employee.ci;
+      if (employee.phone !== undefined) updateData.phone = employee.phone;
+      if (employee.salary !== undefined) updateData.salary = Number(employee.salary);
+      if (employee.workInDays !== undefined) updateData.workInDays = Number(employee.workInDays);
+      if (employee.ocupation !== undefined) updateData.ocupation = employee.ocupation;
+      
+      // Parse through the schema to validate and transform
+      const employeeData = EmployeeUpdateSchema.parse(updateData);
+      
+      // Make API call with only the changed fields
+      const response = await axios.put(
+        `${this.baseUrl}/${employee.id}`, 
+        employeeData
+      );
+      
+      console.log("Updated employee data:", employeeData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      throw error;
+    }
   }
 
   async deleteEmployee(employeeId: number): Promise<boolean> {

@@ -9,9 +9,9 @@ interface Employee {
   phone: string;
   password?: string;
   salary: number;
-  lastPayment: string;
+  lastPayment?: string;
   workInDays: number;
-  ocupation: string;
+  ocupation: string | number;
 }
 
 interface EmployeeFormProps {
@@ -31,9 +31,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   onSave,
   form
 }) => {
+  // Determine if we're in edit mode (for conditional validation)
+  const isEditMode = !!editingEmployee;
+  
   return (
     <Modal
-      title={editingEmployee ? 'Editar Empleado' : 'Crear Empleado'}
+      title={isEditMode ? 'Editar Empleado' : 'Crear Empleado'}
       open={visible}
       onCancel={onCancel}
       footer={[
@@ -46,7 +49,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
           loading={loading} 
           onClick={onSave}
         >
-          {editingEmployee ? 'Actualizar' : 'Crear'}
+          {isEditMode ? 'Actualizar' : 'Crear'}
         </Button>,
       ]}
     >
@@ -57,7 +60,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Form.Item
           name="name"
           label="Nombre"
-          rules={[{ required: true, message: 'Por favor ingrese el nombre' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor ingrese el nombre' }]}
         >
           <Input placeholder="Ej: Juan" />
         </Form.Item>
@@ -65,7 +68,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Form.Item
           name="lastname"
           label="Apellido"
-          rules={[{ required: true, message: 'Por favor ingrese el apellido' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor ingrese el apellido' }]}
         >
           <Input placeholder="Ej: Pérez" />
         </Form.Item>
@@ -73,7 +76,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Form.Item
           name="ci"
           label="Cédula de Identidad"
-          rules={[{ required: true, message: 'Por favor ingrese la cédula de identidad' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor ingrese la cédula de identidad' }]}
         >
           <Input placeholder="Ej: 12345678" />
         </Form.Item>
@@ -81,15 +84,16 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Form.Item
           name="password"
           label="Contraseña"
-          rules={[{ required: !editingEmployee, message: 'Por favor ingrese la contraseña' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor ingrese la contraseña' }]}
+          extra={isEditMode ? "Dejar en blanco para conservar la contraseña actual" : ""}
         >
-          <Input.Password placeholder="Contraseña" />
+          <Input.Password placeholder={isEditMode ? "Dejar en blanco para mantener contraseña actual" : "Contraseña"} />
         </Form.Item>
         
         <Form.Item
           name="phone"
           label="Teléfono"
-          rules={[{ required: true, message: 'Por favor ingrese el teléfono' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor ingrese el teléfono' }]}
         >
           <Input placeholder="Ej: 70123456" />
         </Form.Item>
@@ -97,7 +101,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Form.Item
           name="ocupation"
           label="Ocupación/Cargo"
-          rules={[{ required: true, message: 'Por favor ingrese la ocupación' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor ingrese la ocupación' }]}
         >
           <Input placeholder="Ej: Entrenador, Recepcionista" />
         </Form.Item>
@@ -105,31 +109,34 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Form.Item
           name="salary"
           label="Salario Mensual"
-          rules={[{ required: true, message: 'Por favor ingrese el salario' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor ingrese el salario' }]}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <InputNumber
-            style={{ width: "100%" }}
-            min={0}
-            precision={2}
-            placeholder="Ej: 150.00"
-            disabled={loading}
-          />
-          <span>Bs.</span>
-        </div>
-
+            <InputNumber
+              style={{ width: "100%" }}
+              min={0}
+              precision={2}
+              placeholder="Ej: 150.00"
+              disabled={loading}
+              stringMode={false}
+              parser={value => value ? parseFloat(value.toString().replace(/[^\d.]/g, '')) : 0}
+            />
+            <span>Bs.</span>
+          </div>
         </Form.Item>
         
         <Form.Item
           name="workInDays"
           label="Días de Trabajo"
-          rules={[{ required: true, message: 'Por favor ingrese los días de trabajo' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor ingrese los días de trabajo' }]}
         >
           <InputNumber
             style={{ width: '100%' }}
             min={1}
             max={31}
             placeholder="Ej: 22"
+            stringMode={false}
+            parser={value => value ? parseInt(value.toString().replace(/[^\d]/g, '')) : 0}
           />
         </Form.Item>
       </Form>

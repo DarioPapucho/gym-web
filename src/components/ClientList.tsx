@@ -61,11 +61,6 @@ const ClientList: React.FC = () => {
       sorter: (a, b) => a.lastname.localeCompare(b.lastname),
     },
     {
-      title: 'Usuario',
-      dataIndex: 'username',
-      key: 'username',
-    },
-    {
       title: 'Teléfono',
       dataIndex: 'phone',
       key: 'phone',
@@ -165,7 +160,6 @@ const ClientList: React.FC = () => {
     memberForm.setFieldsValue({
       name: member.name,
       lastname: member.lastname,
-      username: member.username,
       phone: member.phone,
       photoId: member.photo?.fileName,
       // No establecemos la contraseña por seguridad

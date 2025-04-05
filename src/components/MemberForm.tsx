@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Modal, FormInstance, Avatar, Tooltip } from 'antd';
-import {  FaUserCircle, FaCamera} from 'react-icons/fa';
+import { FaUserCircle, FaCamera } from 'react-icons/fa';
 import { Member } from '../services/MemberService';
 import CameraModal from './CameraModal';
 import ImageService from '../services/ImageService';
-const IMAGES_BASE_URL= import.meta.env.VITE_IMAGES_BASE_URL;
+const IMAGES_BASE_URL = import.meta.env.VITE_IMAGES_BASE_URL;
 
 interface MemberFormProps {
   visible: boolean;
@@ -27,13 +27,39 @@ const MemberForm: React.FC<MemberFormProps> = ({
   const [profileImage, setProfileImage] = useState<string>(editingMember?.photo?.filePath || ''); 
   const [cameraModalVisible, setCameraModalVisible] = useState<boolean>(false);
   const [uploadingImage, setUploadingImage] = useState<boolean>(false);
+  
+  // Configurar placeholders dinámicos
+  const getPlaceholder = (field: string, defaultPlaceholder: string) => {
+    if (!editingMember) return defaultPlaceholder;
+    
+    // Si estamos en modo edición, mostrar el valor actual como placeholder
+    switch (field) {
+      case 'name':
+        return editingMember.name || defaultPlaceholder;
+      case 'lastname':
+        return editingMember.lastname || defaultPlaceholder;
+      case 'ci':
+        return editingMember.ci || defaultPlaceholder;
+      case 'phone':
+        return editingMember.phone || defaultPlaceholder;
+      case 'photoId':
+        return editingMember.photo?.fileName || defaultPlaceholder;
+      default:
+        return defaultPlaceholder;
+    }
+  };
+
   useEffect(() => {
     if (editingMember?.photo?.filePath) {
       setProfileImage(editingMember.photo.filePath);
     } else {
       setProfileImage('');
     }
-  }, [editingMember]);
+    
+    // Importante: resetear el formulario para que esté vacío tanto en modo crear como editar
+    form.resetFields();
+  }, [editingMember, form]);
+
   // Manejar la captura de foto
   const handlePhotoCapture = async (imageFile: File) => {
     try {
@@ -103,33 +129,25 @@ const MemberForm: React.FC<MemberFormProps> = ({
           <Form.Item
             name="name"
             label="Nombre"
-            rules={[{ required: true, message: 'Por favor ingrese el nombre' }]}
+            rules={[{ required: !editingMember, message: 'Por favor ingrese el nombre' }]}
           >
-            <Input placeholder="Ej: Juan" />
+            <Input placeholder={getPlaceholder('name', 'Ej: Juan')} />
           </Form.Item>
           
           <Form.Item
             name="lastname"
-            label="Apellido"
-            rules={[{ required: true, message: 'Por favor ingrese el apellido' }]}
+            label="Apellido(s)"
+            rules={[{ required: !editingMember, message: 'Por favor ingrese el apellido' }]}
           >
-            <Input placeholder="Ej: Pérez" />
-          </Form.Item>
-          
-          <Form.Item
-            name="username"
-            label="Usuario"
-            rules={[{ required: true, message: 'Por favor ingrese el nombre de usuario' }]}
-          >
-            <Input placeholder="Ej: UsuarioJuan" />
+            <Input placeholder={getPlaceholder('lastname', 'Ej: Pérez')} />
           </Form.Item>
 
           <Form.Item
             name="ci"
             label="Cedula de Identidad"
-            rules={[{ required: false, message: 'Por favor ingrese la cedula de identidad' }]}
+            rules={[{ required: !editingMember, message: 'Por favor ingrese la cedula de identidad' }]}
           >
-            <Input placeholder="Ej: 12345678" />
+            <Input placeholder={getPlaceholder('ci', 'Ej: 12345678')} />
           </Form.Item>
           
           <Form.Item
@@ -143,9 +161,9 @@ const MemberForm: React.FC<MemberFormProps> = ({
           <Form.Item
             name="phone"
             label="Teléfono"
-            rules={[{ required: true, message: 'Por favor ingrese el teléfono' }]}
+            rules={[{ required: !editingMember, message: 'Por favor ingrese el teléfono' }]}
           >
-            <Input placeholder="Ej: 70123456" />
+            <Input placeholder={getPlaceholder('phone', 'Ej: 70123456')} />
           </Form.Item>
 
           <Form.Item
@@ -154,7 +172,7 @@ const MemberForm: React.FC<MemberFormProps> = ({
             rules={[{ required: false, message: 'Por favor ingrese foto del usuario' }]}
             className="mb-0"
           >
-            <Input placeholder="Ej: image.png" />
+            <Input placeholder={getPlaceholder('photoId', 'Ej: image.png')} />
           </Form.Item>
           <div className="text-right -mt-6 mb-4">
             <Button 

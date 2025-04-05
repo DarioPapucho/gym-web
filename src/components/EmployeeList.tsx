@@ -10,6 +10,7 @@ import PaymentForm from './PaymentForm';
 import PaymentHistory from './PaymentHistory';
 import EmployeeService from '../services/EmployeeService';
 import PaymentService from '../services/PaymentService';
+import CargoEmpleado from '../enums/EmployeeOcupation';
 
 // Define interfaces
 interface Employee {
@@ -21,7 +22,7 @@ interface Employee {
   password?: string;
   salary: number;
   workInDays: number;
-  ocupation: string;
+  ocupation: number;
   payments?: Payment[];
   trainer?: any;
 }
@@ -45,7 +46,7 @@ interface EmployeeInput {
   salary: number;
   lastPayment: Date;
   workInDays: number;
-  ocupation: string;
+  ocupation: number;
 }
 
 interface EmployeeUpdateInput extends Partial<EmployeeInput> {
@@ -58,6 +59,24 @@ interface PaymentInput {
   date: string;
   description: string;
 }
+
+// Helper function to get occupation name from enum
+const getOcupationName = (ocupationId: number): string => {
+  switch (ocupationId) {
+    case CargoEmpleado.SinAcceso:
+      return 'Sin Acceso';
+    case CargoEmpleado.AdminBasico:
+      return 'Admin Básico';
+    case CargoEmpleado.AdminMedio:
+      return 'Admin Medio';
+    case CargoEmpleado.AdminCompleto:
+      return 'Admin Completo';
+    case CargoEmpleado.Entrenador:
+      return 'Entrenador';
+    default:
+      return 'Desconocido';
+  }
+};
 
 const EmployeeList: React.FC = () => {
   // States
@@ -109,6 +128,7 @@ const EmployeeList: React.FC = () => {
       title: 'Ocupación',
       dataIndex: 'ocupation',
       key: 'ocupation',
+      render: (ocupation) => getOcupationName(Number(ocupation)),
     },
     {
       title: 'Salario',
@@ -219,6 +239,7 @@ const EmployeeList: React.FC = () => {
     }
   };
 
+  // Save employee (create or update)
   const handleSaveEmployee = async () => {
     try {
       // Only validate the fields that have values
@@ -239,7 +260,7 @@ const EmployeeList: React.FC = () => {
         Object.keys(values).forEach(key => {
           if (values[key] !== undefined && values[key] !== null && values[key] !== '') {
             // Handle type conversions for numeric fields
-            if (key === 'salary' || key === 'workInDays') {
+            if (key === 'salary' || key === 'workInDays' || key === 'ocupation') {
               updateData[key] = Number(values[key]);
             } else {
               updateData[key] = values[key];
@@ -264,6 +285,9 @@ const EmployeeList: React.FC = () => {
         // Create new employee
         const newEmployee: EmployeeInput = {
           ...values,
+          ocupation: Number(values.ocupation),
+          salary: Number(values.salary),
+          workInDays: Number(values.workInDays),
           lastPayment: new Date(), // Default to current date for new employee
         };
         

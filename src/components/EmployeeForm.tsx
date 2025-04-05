@@ -1,5 +1,6 @@
 import React from 'react';
-import { Form, Input, InputNumber, Button, Modal, FormInstance } from 'antd';
+import { Form, Input, InputNumber, Button, Modal, FormInstance, Select } from 'antd';
+import CargoEmpleado from '../enums/EmployeeOcupation';
 
 interface Employee {
   id: number;
@@ -11,7 +12,7 @@ interface Employee {
   salary: number;
   lastPayment?: string;
   workInDays: number;
-  ocupation: string | number;
+  ocupation: number;
 }
 
 interface EmployeeFormProps {
@@ -33,6 +34,15 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 }) => {
   // Determine if we're in edit mode (for conditional validation)
   const isEditMode = !!editingEmployee;
+  
+  // Generate occupation options from the enum
+  const ocupationOptions = [
+    { value: CargoEmpleado.SinAcceso, label: 'Sin Acceso' },
+    { value: CargoEmpleado.AdminBasico, label: 'Admin Básico' },
+    { value: CargoEmpleado.AdminMedio, label: 'Admin Medio' },
+    { value: CargoEmpleado.AdminCompleto, label: 'Admin Completo' },
+    { value: CargoEmpleado.Entrenador, label: 'Entrenador' },
+  ];
   
   return (
     <Modal
@@ -101,9 +111,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Form.Item
           name="ocupation"
           label="Ocupación/Cargo"
-          rules={[{ required: !isEditMode, message: 'Por favor ingrese la ocupación' }]}
+          rules={[{ required: !isEditMode, message: 'Por favor seleccione la ocupación' }]}
         >
-          <Input placeholder="Ej: Entrenador, Recepcionista" />
+          <Select 
+            placeholder="Seleccione la ocupación" 
+            options={ocupationOptions}
+          />
         </Form.Item>
         
         <Form.Item

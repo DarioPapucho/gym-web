@@ -2,18 +2,24 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+export enum MembershipType {
+  Sesión = 0,
+  Semanal = 1,
+  Mensual = 2,
+  Anual = 3
+}
+
 export interface MembershipPlan {
   id: number;
-  type: string;
+  name: string;
+  type: number;
   amount: number;
-  days: number;
 }
 
 export interface MembershipPlanInput {
-  type: string;
   name: string;
+  type: number;
   amount: number;
-  days: number; 
 }
 
 const getAuthToken = (): string => {
@@ -88,6 +94,11 @@ const MembershipPlansService = {
       throw error;
     }
   },
+
+  // Función auxiliar para obtener el nombre del tipo de membresía
+  getMembershipTypeName: (type: number): string => {
+    return MembershipType[type] || 'Desconocido';
+  }
 };
 
 export default MembershipPlansService;

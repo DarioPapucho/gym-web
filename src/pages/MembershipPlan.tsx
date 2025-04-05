@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { message, Form, Input, InputNumber, Modal, Button, Card, Spin } from 'antd';
+import { message, Form, Input, InputNumber, Modal, Button, Card, Spin, Select } from 'antd';
 import { FaPlus } from 'react-icons/fa';
 import { ColumnsType } from 'antd/es/table';
 import Navbar from "../components/Nav";
 import DataTable from "../components/DataTable";
-import MembershipPlansService, { MembershipPlan, MembershipPlanInput } from '../services/MembershipPlanService';
+import MembershipPlansService, { MembershipPlan, MembershipPlanInput, MembershipType } from '../services/MembershipPlanService';
 
 function MembershipPlanPage() {
   // Estados
@@ -13,7 +13,7 @@ function MembershipPlanPage() {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [tableLoading, setTableLoading] = useState<boolean>(true);
-  const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]); 
+  const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
 
   // Definición de columnas
   const columns: ColumnsType<MembershipPlan> = [
@@ -24,23 +24,39 @@ function MembershipPlanPage() {
       width: '10%',
     },
     {
+      title: 'Nombre',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name) => name || 'Sin nombre',
+      sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
+    },
+    {
       title: 'Tipo',
       dataIndex: 'type',
       key: 'type',
-      sorter: (a, b) => a.type.localeCompare(b.type),
+      render: (type) => {
+        if (type === undefined || type === null) return 'No definido';
+        return MembershipPlansService.getMembershipTypeName(Number(type));
+      },
+      sorter: (a, b) => {
+        const typeA = a.type === undefined || a.type === null ? -1 : Number(a.type);
+        const typeB = b.type === undefined || b.type === null ? -1 : Number(b.type);
+        return typeA - typeB;
+      },
     },
     {
       title: 'Precio',
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount) => `${amount.toFixed(2)} Bs.`,
-      sorter: (a, b) => a.amount - b.amount,
-    },
-    {
-      title: 'Días',
-      dataIndex: 'days',
-      key: 'days',
-      sorter: (a, b) => a.days - b.days,
+      render: (amount) => {
+        if (amount === undefined || amount === null) return '0.00 Bs.';
+        return `${Number(amount).toFixed(2)} Bs.`;
+      },
+      sorter: (a, b) => {
+        const amountA = a.amount === undefined || a.amount === null ? 0 : Number(a.amount);
+        const amountB = b.amount === undefined || b.amount === null ? 0 : Number(b.amount);
+        return amountA - amountB;
+      },
     },
   ];
 
@@ -48,14 +64,31 @@ function MembershipPlanPage() {
   const fetchMembershipPlans = async (page: number, pageSize: number) => {
     setTableLoading(true);
     try {
-        const data = await MembershipPlansService.getAll(page, pageSize);
-        setMembershipPlans(data.data);
-      } catch (error) {
-        console.error('Error al obtener los planes de membresía:', error);
-        message.error('No se pudieron cargar los planes de membresía');
-      } finally {
-        setTableLoading(false);
+      const data = await MembershipPlansService.getAll(page, pageSize);
+      
+      // Verificar que los datos recibidos sean válidos
+      if (Array.isArray(data.data)) {
+        // Asegurarse de que todos los campos necesarios existan
+        const validatedData = data.data.map(plan => ({
+          id: plan.id || 0,
+          name: plan.name || '',
+          type: plan.type !== undefined ? Number(plan.type) : 0,
+          amount: plan.amount !== undefined ? Number(plan.amount) : 0
+        }));
+        
+        setMembershipPlans(validatedData);
+      } else {
+        console.error('Formato de datos inválido:', data);
+        setMembershipPlans([]);
+        message.error('Los datos recibidos tienen un formato inválido');
       }
+    } catch (error) {
+      console.error('Error al obtener los planes de membresía:', error);
+      message.error('No se pudieron cargar los planes de membresía');
+      setMembershipPlans([]);
+    } finally {
+      setTableLoading(false);
+    }
   };
   
   useEffect(() => {
@@ -71,13 +104,30 @@ function MembershipPlanPage() {
 
   // Función para abrir el modal en modo edición
   const handleEdit = (plan: MembershipPlan) => {
-    setEditingPlan(plan);
-    form.setFieldsValue({
-      type: plan.type,
-      amount: plan.amount,
-      days: plan.days,
-    });
-    setModalVisible(true);
+    try {
+      // Validar que el plan tenga todos los campos necesarios
+      const validatedPlan = {
+        ...plan,
+        id: plan.id || 0,
+        name: plan.name || '',
+        type: plan.type !== undefined ? Number(plan.type) : 0,
+        amount: plan.amount !== undefined ? Number(plan.amount) : 0
+      };
+      
+      setEditingPlan(validatedPlan);
+      
+      // Establecer los valores en el formulario
+      form.setFieldsValue({
+        name: validatedPlan.name,
+        type: validatedPlan.type,
+        amount: validatedPlan.amount,
+      });
+      
+      setModalVisible(true);
+    } catch (error) {
+      console.error('Error al editar el plan:', error);
+      message.error('No se pudo editar el plan');
+    }
   };
 
   // Función para eliminar un plan
@@ -136,6 +186,14 @@ function MembershipPlanPage() {
     fetchMembershipPlans(pagination.current, pagination.pageSize);
   };
 
+  // Obtener opciones para el selector de tipo de membresía
+  const membershipTypeOptions = Object.entries(MembershipType)
+    .filter(([key]) => isNaN(Number(key))) // Filtra solo los nombres, no los valores numéricos
+    .map(([key, value]) => ({
+      label: key,
+      value: Number(value), // Asegurarse de que el valor sea un número
+    }));
+
   return (
     <>
       <Navbar />
@@ -185,11 +243,23 @@ function MembershipPlanPage() {
               layout="vertical"
             >
               <Form.Item
+                name="name"
+                label="Nombre del Plan"
+                rules={[{ required: true, message: 'Por favor ingrese el nombre del plan' }]}
+              >
+                <Input placeholder="Ej: Mensual - preinscripción" disabled={loading} />
+              </Form.Item>
+              
+              <Form.Item
                 name="type"
                 label="Tipo de Plan"
-                rules={[{ required: true, message: 'Por favor ingrese el tipo de plan' }]}
+                rules={[{ required: true, message: 'Por favor seleccione el tipo de plan' }]}
               >
-                <Input placeholder="Ej: Mensual, Trimestral, Anual" disabled={loading} />
+                <Select 
+                  placeholder="Seleccione un tipo de membresía"
+                  disabled={loading}
+                  options={membershipTypeOptions}
+                />
               </Form.Item>
               
               <Form.Item
@@ -207,21 +277,6 @@ function MembershipPlanPage() {
                   />
                   <span>Bs.</span>
                 </div>
-
-              </Form.Item>
-              
-              <Form.Item
-                name="days"
-                label="Duración (días)"
-                rules={[{ required: true, message: 'Por favor ingrese la duración en días' }]}
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={1}
-                  precision={0}
-                  placeholder="Ej: 30, 90, 365"
-                  disabled={loading}
-                />
               </Form.Item>
             </Form>
           </Spin>

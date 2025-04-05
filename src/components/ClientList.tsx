@@ -9,7 +9,10 @@ import MembershipForm from './MembershipForm';
 import MembershipHistory from './MembershipHistory';
 import MembersService, { Member, MemberInput, MemberUpdateInput, MembershipInput } from '../services/MemberService';
 import MembershipPlansService, { MembershipPlan } from '../services/MembershipPlanService';
-const IMAGES_BASE_URL= import.meta.env.VITE_IMAGES_BASE_URL;
+import CargoEmpleado from '../enums/EmployeeOcupation';
+
+const IMAGES_BASE_URL = import.meta.env.VITE_IMAGES_BASE_URL;
+
 const ClientList: React.FC = () => {
   // Estados
   const [memberForm] = Form.useForm();
@@ -27,6 +30,41 @@ const ClientList: React.FC = () => {
   const [membersData, setMembersData] = useState<Member[]>([]);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [loadingMembershipPlans, setLoadingMembershipPlans] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<CargoEmpleado>(CargoEmpleado.AdminCompleto); // Default to full access for demo
+
+  // Comprobación de permisos
+  const canManageMembers = userRole >= CargoEmpleado.AdminBasico;
+  const canManageMemberships = userRole >= CargoEmpleado.AdminMedio;
+
+  // Efecto para cargar rol del usuario desde localStorage o API
+  useEffect(() => {
+    const getUserRole = () => {
+      try {
+        // Get user role from localStorage or API
+        const storedRole = localStorage.getItem('userRole');
+        if (storedRole) {
+          setUserRole(parseInt(storedRole));
+        } else {
+          // Si no hay rol almacenado, mantener el predeterminado
+          console.log('No se encontró rol de usuario, usando rol predeterminado');
+        }
+      } catch (error) {
+        console.error('Error al obtener rol de usuario:', error);
+      }
+    };
+
+    getUserRole();
+  }, []);
+
+  // Función para verificar si una membresía está activa
+  const isMembershipActive = (initDate: string, finishDate: string) => {
+    const startDate = new Date(initDate);
+    const endDate = new Date(finishDate);
+    const currentDate = new Date();
+    
+    // Una membresía está activa cuando la fecha actual está entre la fecha de inicio y fin
+    return currentDate >= startDate && currentDate <= endDate;
+  };
 
   // Definición de columnas
   const columns: ColumnsType<Member> = [
@@ -70,10 +108,7 @@ const ClientList: React.FC = () => {
       key: 'membership',
       render: (_, record) => {
         const activeMemberships = record.membership && record.membership.length > 0 
-          ? record.membership.filter(m => {
-              const finishDate = new Date(m.finishDate);
-              return finishDate > new Date();
-            }) 
+          ? record.membership.filter(m => isMembershipActive(m.initDate, m.finishDate)) 
           : [];
         
         return activeMemberships.length > 0 
@@ -86,10 +121,7 @@ const ClientList: React.FC = () => {
       ],
       onFilter: (value, record) => {
         const hasMembership = record.membership && record.membership.length > 0 &&
-          record.membership.some(m => {
-            const finishDate = new Date(m.finishDate);
-            return finishDate > new Date();
-          });
+          record.membership.some(m => isMembershipActive(m.initDate, m.finishDate));
         
         return value === 'active' ? hasMembership : !hasMembership;
       },
@@ -149,6 +181,10 @@ const ClientList: React.FC = () => {
 
   // Función para abrir el modal en modo creación
   const handleCreateMember = () => {
+    if (!canManageMembers) {
+      message.error('No tiene permisos para crear clientes');
+      return;
+    }
     setEditingMember(null);
     memberForm.resetFields();
     setMemberModalVisible(true);
@@ -156,6 +192,10 @@ const ClientList: React.FC = () => {
 
   // Función para abrir el modal en modo edición
   const handleEditMember = (member: Member) => {
+    if (!canManageMembers) {
+      message.error('No tiene permisos para editar clientes');
+      return;
+    }
     setEditingMember(member);
     memberForm.setFieldsValue({
       name: member.name,
@@ -169,6 +209,11 @@ const ClientList: React.FC = () => {
 
   // Función para eliminar un miembro
   const handleDeleteMember = async (member: Member) => {
+    if (!canManageMembers) {
+      message.error('No tiene permisos para eliminar clientes');
+      return false;
+    }
+
     setTableLoading(true);
     try {
       await MembersService.delete(member.id);
@@ -185,6 +230,11 @@ const ClientList: React.FC = () => {
 
   // Función para guardar un miembro (crear o actualizar)
   const handleSaveMember = async () => {
+    if (!canManageMembers) {
+      message.error('No tiene permisos para gestionar clientes');
+      return;
+    }
+
     try {
       await memberForm.validateFields();
       
@@ -223,14 +273,20 @@ const ClientList: React.FC = () => {
 
   // Función para abrir modal de membresía
   const openMembershipModal = (member: Member) => {
+    if (!canManageMemberships) {
+      message.error('No tiene permisos para gestionar membresías');
+      return;
+    }
+
     setSelectedMember(member);
     setMembershipModalVisible(true);
     membershipForm.resetFields();
     
-    // Establecer fechas por defecto
+    // Establecer valores por defecto
     const today = dayjs();
     membershipForm.setFieldsValue({
       initDate: today,
+      quantity: 1
     });
   };
 
@@ -238,18 +294,59 @@ const ClientList: React.FC = () => {
   const handlePlanChange = (planId: number) => {
     const selectedPlan = membershipPlans.find(plan => plan.id === planId);
     if (selectedPlan) {
+      const quantity = membershipForm.getFieldValue('quantity') || 1;
       const startDate = membershipForm.getFieldValue('initDate') || dayjs();
-      const endDate = dayjs(startDate).add(selectedPlan.days, 'day');
+      let endDate = dayjs(startDate);
+      
+      // Manejar planType como número, no como string
+      const planType = Number(selectedPlan.type);
+      
+      // Calcular en base al tipo de plan como número
+      switch (planType) {
+        case 0: // Session
+          // Para sesiones, establecemos una expiración predeterminada (30 días por sesión)
+          endDate = endDate.add(30 * quantity, 'day');
+          break;
+        case 1: // Weekly
+          endDate = endDate.add(7 * quantity, 'day');
+          break;
+        case 2: // Monthly
+          endDate = endDate.add(quantity, 'month');
+          break;
+        case 3: // Yearly
+          endDate = endDate.add(quantity, 'year');
+          break;
+        default:
+          // Si el tipo de plan no coincide con ninguno de los anteriores, usar días del plan
+          endDate = endDate.add(selectedPlan.days * quantity, 'day');
+      }
+      
+      // Definir los nombres de los tipos de plan
+      const planTypeNames = {
+        0: 'Sesión',
+        1: 'Semanal',
+        2: 'Mensual',
+        3: 'Anual',
+        4: 'Otro'
+      };
+      
+      // Usar el nombre del tipo de plan desde el mapeo
+      const planName = planTypeNames[planType] || 'Plan';
+      
       membershipForm.setFieldsValue({ 
-        name: selectedPlan.type,
+        name: planName,
         finishDate: endDate,
-        amount: selectedPlan.amount
+        amount: selectedPlan.amount * quantity
       });
     }
   };
-
   // Función para guardar membresía
   const handleSaveMembership = async () => {
+    if (!canManageMemberships) {
+      message.error('No tiene permisos para gestionar membresías');
+      return;
+    }
+
     try {
       await membershipForm.validateFields();
       const formValues = membershipForm.getFieldsValue();
@@ -288,28 +385,41 @@ const ClientList: React.FC = () => {
   };
 
   // Elementos para menú contextual
-  const contextMenuItems = (member: Member) => [
-    {
-      key: 'addMembership',
-      label: 'Agregar Membresía',
-      icon: <FaUserPlus />,
-      onClick: () => openMembershipModal(member),
-    },
-    {
+  const contextMenuItems = (member: Member) => {
+    const items = [];
+    
+    if (canManageMemberships) {
+      items.push({
+        key: 'addMembership',
+        label: 'Agregar Membresía',
+        icon: <FaUserPlus />,
+        onClick: () => openMembershipModal(member),
+      });
+    }
+    
+    items.push({
       key: 'viewMemberships',
       label: 'Ver todas las membresías',
       icon: <FaHistory />,
       onClick: () => viewAllMemberships(member),
-    },
-  ];
+    });
+    
+    return items;
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
+      {userRole === CargoEmpleado.SinAcceso && (
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded border border-red-300">
+          No tiene permisos para acceder a esta sección. Por favor, contacte al administrador.
+        </div>
+      )}
+      
       <Card title="Gestión de Clientes" extra={
         <Button 
           type="primary" 
           onClick={handleCreateMember}
-          disabled={tableLoading}
+          disabled={tableLoading || !canManageMembers}
         >
           <FaPlus className="mr-2" /> Nuevo Cliente
         </Button>
@@ -336,6 +446,7 @@ const ClientList: React.FC = () => {
         onCancel={() => setMemberModalVisible(false)}
         onSave={handleSaveMember}
         form={memberForm}
+        userRole={userRole}
       />
       
       <Spin spinning={loadingMembershipPlans} tip="Cargando planes...">
@@ -348,6 +459,7 @@ const ClientList: React.FC = () => {
           onCancel={() => setMembershipModalVisible(false)}
           onSave={handleSaveMembership}
           onPlanChange={handlePlanChange}
+          userRole={userRole}
         />
       </Spin>
       

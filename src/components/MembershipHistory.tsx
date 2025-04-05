@@ -16,6 +16,23 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
   memberships,
   onClose
 }) => {
+  // Función para formatear fechas UTC correctamente
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    // Crear la fecha en UTC y luego formatearla
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString();
+  };
+
+  // Función para verificar si una membresía está activa
+  const isActive = (initDate, finishDate) => {
+    const startDate = new Date(initDate);
+    const endDate = new Date(finishDate);
+    const currentDate = new Date();
+    
+    // Una membresía está activa cuando la fecha actual está entre la fecha de inicio y fin
+    return currentDate >= startDate && currentDate <= endDate;
+  };
+
   return (
     <Modal
       title={`Historial de Membresías - ${selectedMember?.name || ''} ${selectedMember?.lastname || ''}`}
@@ -47,29 +64,23 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {memberships.map(membership => {
-                  const startDate = new Date(membership.initDate);
-                  const endDate = new Date(membership.finishDate);
-                  const isActive = endDate > new Date();
-
-                  return (
-                    <tr key={membership.id}>
-                      <td className="py-2 px-4 border-b">{membership.id}</td>
-                      <td className="py-2 px-4 border-b">{membership.amount} Bs.</td>
-                      <td className="py-2 px-4 border-b">
-                        {startDate.toLocaleDateString()}
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        {endDate.toLocaleDateString()}
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        <span className={`px-2 py-1 rounded ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {isActive ? 'Activa' : 'Expirada'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {memberships.map(membership => (
+                  <tr key={membership.id}>
+                    <td className="py-2 px-4 border-b">{membership.id}</td>
+                    <td className="py-2 px-4 border-b">{membership.amount} Bs.</td>
+                    <td className="py-2 px-4 border-b">
+                      {formatDate(membership.initDate)}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      {formatDate(membership.finishDate)}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      <span className={`px-2 py-1 rounded ${isActive(membership.initDate, membership.finishDate) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {isActive(membership.initDate, membership.finishDate) ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

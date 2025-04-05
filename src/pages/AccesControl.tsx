@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Clock, Calendar, User, CheckCircle, Wifi, WifiOff, ArrowRightCircle, XCircle, Trash } from "lucide-react"
+import { Clock, Calendar, User, CheckCircle, Wifi, WifiOff, ArrowRightCircle, XCircle, Trash, AlertTriangle } from "lucide-react"
 
 const API_URL = "http://20.197.229.78:5202/api/clients/enter-the-gym"
 const IMAGES_BASE_URL = import.meta.env.VITE_IMAGES_BASE_URL;
@@ -125,7 +125,7 @@ const AccessControlPage = () => {
           }
         }, 15000)
       } else {
-        setMessage("Acceso denegado. ID inválido.")
+        setMessage("Acceso denegado. Asegurate de tener tu membrecía activa.")
         setLoading(false)
 
         setTimeout(() => {
@@ -170,6 +170,19 @@ const AccessControlPage = () => {
       hour: "2-digit",
       minute: "2-digit",
     })
+  }
+
+  const getDaysRemaining = (finishDate) => {
+    const today = new Date()
+    const expiryDate = new Date(finishDate)
+    // Restablecer las horas para comparar solo fechas
+    today.setHours(0, 0, 0, 0)
+    expiryDate.setHours(0, 0, 0, 0)
+    
+    const timeDiff = expiryDate.getTime() - today.getTime()
+    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24))
+    
+    return daysRemaining
   }
 
   return (
@@ -357,6 +370,26 @@ const AccessControlPage = () => {
                     </div>
                   </div>
 
+                  {/* Aquí se agrega el nuevo componente que muestra los días restantes */}
+                  <div className={`p-3 rounded-md ${getDaysRemaining(userData.finishDate) <= 5 ? 'bg-red-900/50 border border-red-500' : 'bg-green-900/50 border border-green-500'}`}>
+                    <div className="flex items-center space-x-3">
+                      <AlertTriangle className={`h-6 w-6 ${getDaysRemaining(userData.finishDate) <= 5 ? 'text-red-500' : 'text-green-500'}`} />
+                      <div>
+                        <p className="text-sm text-gray-300">Días restantes de membresía</p>
+                        <p className={`font-bold ${getDaysRemaining(userData.finishDate) <= 5 ? 'text-red-400' : 'text-green-400'}`}>
+                          {getDaysRemaining(userData.finishDate)} día{getDaysRemaining(userData.finishDate) !== 1 ? 's' : ''}
+                        </p>
+                        {getDaysRemaining(userData.finishDate) <= 5 && (
+                          <p className="text-xs text-red-300 mt-1">
+                            {getDaysRemaining(userData.finishDate) <= 0 
+                              ? '¡Tu membresía ha vencido!' 
+                              : '¡Tu membresía está por vencer!'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-6 w-6 text-yellow-400" />
                     <div>
@@ -407,4 +440,3 @@ const AccessControlPage = () => {
 }
 
 export default AccessControlPage
-

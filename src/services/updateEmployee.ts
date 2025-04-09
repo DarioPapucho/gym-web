@@ -17,7 +17,7 @@ export async function updateEmployee(employee: Employee): Promise<Employee> {
   });
 
   const response = await axios.put(
-    `http://20.197.226.113:5202/api/employees/${employee.id}`,
+    `https://onixgym.online/api/api/employees/${employee.id}`,
     {
       ...employeeData,
       lastPayment: employeeData.lastPayment.toISOString(),

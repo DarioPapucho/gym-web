@@ -26,7 +26,7 @@ const Dashboard = () => {
     const fetchClients = async () => {
       setLoading(true);
       try {
-        const response = await fetch('http://20.197.229.78:5202/api/clients', {
+        const response = await fetch('https://onixgym.online/api/api/clients', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

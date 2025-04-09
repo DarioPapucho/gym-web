@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { Clock, Calendar, User, CheckCircle, Wifi, WifiOff, ArrowRightCircle, XCircle, Trash, AlertTriangle } from "lucide-react"
 
-const API_URL = "http://20.197.229.78:5202/api/clients/enter-the-gym"
+const API_URL = "https://onixgym.online/api/api/clients/enter-the-gym"
 const IMAGES_BASE_URL = import.meta.env.VITE_IMAGES_BASE_URL;
 
 const AccessControlPage = () => {

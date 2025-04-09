@@ -1,7 +1,7 @@
 import axios from "axios";
 import Employee from "../schemas/Employee";
 import { EmployeeUpdate, EmployeeUpdateSchema } from "../schemas/EmployeeEschema";
-
+const token = localStorage.getItem("authGimToken");
 class EmployeeService {
   private baseUrl: string;
 
@@ -11,7 +11,12 @@ class EmployeeService {
 
   async createEmployee(employeeData: EmployeeUpdate) {
     try {
-      const response = await axios.post(this.baseUrl, employeeData);
+      const response = await axios.post(this.baseUrl, employeeData,
+        {
+          headers: { 
+            "Authorization": `Bearer ${token}` 
+          }
+        });
       return response.data;
     } catch (error) {
       console.error("Error creating employee:", error);
@@ -40,7 +45,12 @@ class EmployeeService {
       // Make API call with only the changed fields
       const response = await axios.put(
         `${this.baseUrl}/${employee.id}`, 
-        employeeData
+        employeeData,
+        {
+          headers: { 
+            "Authorization": `Bearer ${token}` 
+          }
+        }
       );
       
       console.log("Updated employee data:", employeeData);

@@ -3,6 +3,19 @@ import Employee from "../schemas/Employee";
 import { EmployeeUpdateSchema } from "../schemas/EmployeeEschema";
 import { EmployeeUpdate } from "../schemas/EmployeeEschema.ts";
 
+const getAuthToken = (): string => {
+  return localStorage.getItem('authGimToken') || '';
+};
+
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  };
+};
 export async function updateEmployee(employee: Employee): Promise<Employee> {
   const employeeData: EmployeeUpdate = EmployeeUpdateSchema.parse({
     name: employee.name,
@@ -21,6 +34,7 @@ export async function updateEmployee(employee: Employee): Promise<Employee> {
     {
       ...employeeData,
       lastPayment: employeeData.lastPayment.toISOString(),
+      ...getAuthHeaders(),
     }
   );
   console.log("lo que se mando es: ", employeeData);

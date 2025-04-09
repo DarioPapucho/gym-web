@@ -5,6 +5,7 @@ export interface ImageModel {
   fileName: string;
   filePath: string;
 }
+const token = localStorage.getItem("authGimToken");
 
 class ImageService {
 
@@ -13,7 +14,11 @@ class ImageService {
    * Obtiene todas las imágenes
    */
   async getAll(): Promise<ImageModel[]> {
-    const response = await axios.get<ImageModel[]>(`${API_BASE_URL}/images`);
+    const response = await axios.get<ImageModel[]>(`${API_BASE_URL}/images`, {
+      headers: { 
+        "Authorization": `Bearer ${token}` 
+      }
+    });
     return response.data;
   }
   
@@ -33,7 +38,8 @@ class ImageService {
     
     const response = await axios.post<ImageModel>(`${API_BASE_URL}/images`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'multipart/form-data',
+        "Authorization": `Bearer ${token}` 
       }
     });
     
@@ -45,7 +51,11 @@ class ImageService {
    * @param id ID de la imagen
    */
   async delete(id: string): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/images${id}`);
+    await axios.delete(`${API_BASE_URL}/images${id}`, {
+      headers: { 
+        "Authorization": `Bearer ${token}` 
+      }
+    });
   }
 }
 

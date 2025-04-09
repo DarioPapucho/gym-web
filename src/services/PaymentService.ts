@@ -16,6 +16,19 @@ interface PaymentInput {
   description: string;
   monthPaid: string | null;
 }
+const getAuthToken = (): string => {
+  return localStorage.getItem('authGimToken') || '';
+};
+
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  };
+};
 
 class PaymentService {
   private baseUrl: string;
@@ -26,7 +39,9 @@ class PaymentService {
 
   async addPayment(paymentData: PaymentInput): Promise<Payment> {
     try {
-      const response = await axios.post(this.baseUrl, paymentData);
+      const response = await axios.post(this.baseUrl, paymentData, {
+        ...getAuthHeaders(),
+      });
       return response.data;
     } catch (error) {
       console.error("Error creating payment:", error);
@@ -36,7 +51,9 @@ class PaymentService {
 
   async getPaymentsByEmployeeId(employeeId: number): Promise<Payment[]> {
     try {
-      const response = await axios.get(`${this.baseUrl}/employee/${employeeId}`);
+      const response = await axios.get(`${this.baseUrl}/employee/${employeeId}`, {
+        ...getAuthHeaders(),
+      });
       return response.data;
     } catch (error) {
       console.error(`Error fetching payments for employee ${employeeId}:`, error);
@@ -46,7 +63,9 @@ class PaymentService {
 
   async deletePayment(paymentId: number): Promise<boolean> {
     try {
-      await axios.delete(`${this.baseUrl}/${paymentId}`);
+      await axios.delete(`${this.baseUrl}/${paymentId}`, {
+        ...getAuthHeaders(),
+      });
       return true;
     } catch (error) {
       console.error("Error deleting payment:", error);

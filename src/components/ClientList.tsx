@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { message, Form, Card, Button, Spin, Avatar } from 'antd';
-import { FaPlus, FaUserPlus, FaHistory, FaUser } from 'react-icons/fa';
+import { message, Form, Card, Button, Spin, Avatar, Input, Row, Col, Space } from 'antd';
+import { FaPlus, FaUserPlus, FaHistory, FaUser, FaSearch } from 'react-icons/fa';
 import { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import DataTable from './DataTable';
@@ -31,6 +31,8 @@ const ClientList: React.FC = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [loadingMembershipPlans, setLoadingMembershipPlans] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<CargoEmpleado>(CargoEmpleado.AdminCompleto); // Default to full access for demo
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [isSearching, setIsSearching] = useState<boolean>(false);
 
   // Comprobación de permisos
   const canManageMembers = userRole >= CargoEmpleado.AdminBasico;
@@ -160,8 +162,45 @@ const ClientList: React.FC = () => {
     }
   };
 
+  // Función para realizar búsqueda
+  const handleSearch = async (value: string) => {
+    if (!value.trim()) {
+      // Si el término de búsqueda está vacío, cargar todos los miembros
+      loadMembers(1, pagination.pageSize);
+      return;
+    }
+
+    setIsSearching(true);
+    setTableLoading(true);
+    
+    try {
+      const results = await MembersService.search(value.trim());
+      setMembersData(results || []);
+      setPagination({
+        ...pagination,
+        current: 1,
+        total: results.length,
+      });
+    } catch (error) {
+      console.error(`Error al buscar clientes con término "${value}":`, error);
+      message.error('Error al buscar clientes');
+    } finally {
+      setTableLoading(false);
+      setIsSearching(false);
+    }
+  };
+
+  // Función para limpiar la búsqueda
+  const clearSearch = () => {
+    setSearchTerm('');
+    loadMembers(1, pagination.pageSize);
+  };
+
   // Función para manejar cambios en la tabla
   const handleTableChange = (newPagination: any) => {
+    // Si estamos en modo búsqueda, no hacemos paginación
+    if (searchTerm.trim()) return;
+    
     loadMembers(newPagination.current, newPagination.pageSize);
   };
 
@@ -218,7 +257,14 @@ const ClientList: React.FC = () => {
     try {
       await MembersService.delete(member.id);
       message.success('Cliente eliminado correctamente');
-      loadMembers(pagination.current, pagination.pageSize);
+      
+      // Si hay un término de búsqueda activo, actualizar los resultados de búsqueda
+      if (searchTerm.trim()) {
+        handleSearch(searchTerm);
+      } else {
+        loadMembers(pagination.current, pagination.pageSize);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error al eliminar cliente:', error);
@@ -262,7 +308,13 @@ const ClientList: React.FC = () => {
       setMemberModalVisible(false);
       memberForm.resetFields();
       setEditingMember(null);
-      loadMembers(pagination.current, pagination.pageSize);
+      
+      // Si hay una búsqueda activa, actualizar resultados de búsqueda
+      if (searchTerm.trim()) {
+        handleSearch(searchTerm);
+      } else {
+        loadMembers(pagination.current, pagination.pageSize);
+      }
     } catch (error) {
       console.error('Error al guardar cliente:', error);
       message.error('Error al guardar el cliente');
@@ -367,8 +419,12 @@ const ClientList: React.FC = () => {
       
       message.success(`Membresía asignada correctamente a ${selectedMember.name}`);
       setMembershipModalVisible(false);
-      // Recargar los datos para mostrar la nueva membresía
-      loadMembers(pagination.current, pagination.pageSize);
+      
+      if (searchTerm.trim()) {
+        handleSearch(searchTerm);
+      } else {
+        loadMembers(pagination.current, pagination.pageSize);
+      }
     } catch (error) {
       console.error('Error al guardar membresía:', error);
       message.error('Error al asignar membresía');
@@ -424,6 +480,33 @@ const ClientList: React.FC = () => {
           <FaPlus className="mr-2" /> Nuevo Cliente
         </Button>
       }>
+        {/* Barra de búsqueda */}
+        <div className="mb-4">
+          <Row gutter={16} align="middle">
+            <Col xs={24} sm={16} md={18}>
+              <Input.Search
+                placeholder="Buscar por nombre, apellido o teléfono..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onSearch={handleSearch}
+                loading={isSearching}
+                enterButton={<><FaSearch /> Buscar</>}
+                size="middle"
+                allowClear
+              />
+            </Col>
+            <Col xs={24} sm={8} md={6} className="mt-2 sm:mt-0">
+              {searchTerm && (
+                <Space>
+                  <Button onClick={clearSearch}>
+                    Mostrar Todos
+                  </Button>
+                </Space>
+              )}
+            </Col>
+          </Row>
+        </div>
+
         <DataTable<Member>
           data={membersData}
           columns={columns}

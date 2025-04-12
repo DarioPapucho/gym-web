@@ -71,6 +71,13 @@ export interface MembershipInput {
   clientId: number;
 }
 
+// Tipo para actualizar una membresía
+export interface MembershipUpdateInput {
+  amount?: number;
+  initDate?: string;
+  finishDate?: string;
+}
+
 // Obtener token de autenticación
 const getAuthToken = (): string => {
   return localStorage.getItem('authGimToken') || '';
@@ -110,7 +117,21 @@ const MembersService = {
       throw error;
     }
   },
-
+  /**
+   * Buscar miembros por término (nombre, apellido, Ci.)
+   */
+  search: async (term: string): Promise<Member[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/clients/search`, {
+        params: { term },
+        ...getAuthHeaders(),
+      });
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error(`Error al buscar miembros con término "${term}":`, error);
+      throw error;
+    }
+  },
   /**
    * Obtener un miembro por ID
    */
@@ -184,6 +205,31 @@ const MembersService = {
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error(`Error al obtener membresías del cliente ${clientId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar una membresía existente
+   */
+  updateMembership: async (id: number, membershipData: MembershipUpdateInput): Promise<Membership> => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/memberships/${id}`, membershipData, getAuthHeaders());
+      return response.data;
+    } catch (error) {
+      console.error(`Error al actualizar membresía con ID ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Eliminar una membresía
+   */
+  deleteMembership: async (id: number): Promise<void> => {
+    try {
+      await axios.delete(`${API_BASE_URL}/memberships/${id}`, getAuthHeaders());
+    } catch (error) {
+      console.error(`Error al eliminar membresía con ID ${id}:`, error);
       throw error;
     }
   },

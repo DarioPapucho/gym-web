@@ -4,42 +4,43 @@ import { FaIdCard, FaEdit, FaTrash } from 'react-icons/fa';
 import { Member, Membership, MembershipUpdateInput } from '../services/MemberService';
 import MembersService from '../services/MemberService';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 interface MembershipHistoryProps {
   visible: boolean;
   selectedMember: Member | null;
   memberships: Membership[];
   onClose: () => void;
-  onMembershipUpdated: () => void;
 }
 
 const MembershipHistory: React.FC<MembershipHistoryProps> = ({
   visible,
   selectedMember,
   memberships,
-  onClose,
-  onMembershipUpdated
+  onClose
 }) => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentMembership, setCurrentMembership] = useState<Membership | null>(null);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  // Add a state to track if changes were made
+  const [changesMade, setChangesMade] = useState(false);
 
-  // Función para formatear fechas correctamente
   const formatDate = (dateString: string) => {
-    // Usar dayjs para manejar las fechas
-    return dayjs(dateString).format('DD/MM/YYYY');
+    return dayjs.utc(dateString).format('DD/MM/YYYY');
   };
 
   // Función para verificar si una membresía está activa
   const isActive = (initDate: string, finishDate: string) => {
-    // Usar dayjs para comparar fechas
-    const startDate = dayjs(initDate).startOf('day');
-    const endDate = dayjs(finishDate).endOf('day');
-    const currentDate = dayjs();
+    // Convertimos todas las fechas a UTC para comparar correctamente
+    const startDate = dayjs.utc(initDate).startOf('day');
+    const endDate = dayjs.utc(finishDate).endOf('day');
+    const currentDate = dayjs.utc();
     
     // Una membresía está activa cuando la fecha actual está entre la fecha de inicio y fin
-    return currentDate.isAfter(startDate) || currentDate.isSame(startDate, 'day') && 
+    return (currentDate.isAfter(startDate) || currentDate.isSame(startDate, 'day')) && 
            (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day'));
   };
 
@@ -55,12 +56,26 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
     
     setButtonPosition({ top, left: 0 });
     setCurrentMembership(membership);
+    
+    // Configurar el formulario con los valores originales, asegurando que se utilice UTC
     form.setFieldsValue({
       amount: membership.amount,
-      initDate: dayjs(membership.initDate),
-      finishDate: dayjs(membership.finishDate),
+      initDate: dayjs.utc(membership.initDate),
+      finishDate: dayjs.utc(membership.finishDate),
     });
+    
     setEditModalVisible(true);
+  };
+
+  // Handle modal close with potential refresh
+  const handleModalClose = () => {
+    if (changesMade) {
+      // If changes were made, refresh the page
+      window.location.reload();
+    } else {
+      // If no changes, just close without refresh
+      onClose();
+    }
   };
 
   // Guardar cambios de la membresía
@@ -71,21 +86,22 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
         setLoading(true);
 
         // Preparar los datos para la actualización
-        // Usar formato ISO completo para las fechas como requiere el backend
         const updateData: MembershipUpdateInput = {
           amount: values.amount,
-          initDate: dayjs(values.initDate).toISOString(),
-          finishDate: dayjs(values.finishDate).toISOString(),
+          initDate: dayjs(values.initDate).utc().format('YYYY-MM-DDTHH:mm:ss') + 'Z',
+          finishDate: dayjs(values.finishDate).utc().format('YYYY-MM-DDTHH:mm:ss') + 'Z',
         };
 
         // Llamar al servicio para actualizar
         await MembersService.updateMembership(currentMembership.id, updateData);
         
         message.success('Membresía actualizada con éxito');
-        // Cerrar ambos modales
+        // Mark that changes were made
+        setChangesMade(true);
+        // Cerrar el modal de edición y también el modal principal
         setEditModalVisible(false);
-        onClose(); // Cerrar el modal de historial
-        onMembershipUpdated(); // Notificar que se actualizó para recargar los datos
+        // Cerrar el modal principal automáticamente
+        window.location.reload();
       }
     } catch (error) {
       console.error('Error al guardar cambios:', error);
@@ -101,9 +117,10 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
       setLoading(true);
       await MembersService.deleteMembership(membershipId);
       message.success('Membresía eliminada con éxito');
-      // Cerrar el modal de historial
-      onClose();
-      onMembershipUpdated(); // Notificar que se eliminó para recargar los datos
+      // Mark that changes were made
+      setChangesMade(true);
+      // Cerrar el modal principal automáticamente y recargar la página
+      window.location.reload();
     } catch (error) {
       console.error('Error al eliminar membresía:', error);
       message.error('Error al eliminar la membresía');
@@ -117,9 +134,9 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
       <Modal
         title={`Historial de Membresías - ${selectedMember?.name || ''} ${selectedMember?.lastname || ''}`}
         open={visible}
-        onCancel={onClose}
+        onCancel={handleModalClose}
         footer={[
-          <Button key="close" onClick={onClose}>
+          <Button key="close" onClick={handleModalClose}>
             Cerrar
           </Button>,
         ]}

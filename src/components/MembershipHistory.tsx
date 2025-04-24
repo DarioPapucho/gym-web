@@ -148,35 +148,33 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
       // En un entorno real, necesitarías reemplazar esto con tu imagen real
       const logoImage = new Image();
       logoImage.src = '../../public/onixlogo.png';
-      doc.addImage(logoImage, 'PNG', 25, 10, 30, 30);
+      doc.addImage(logoImage, 'PNG', 3, 0, 30, 30);
       
       // Nombre del gimnasio
-      doc.setFontSize(12);
+      doc.setFontSize(25);
       doc.setFont('helvetica', 'bold');
-      doc.text('ONIX', 40, 45, { align: 'center' });
-      doc.text('SPORT CENTER', 40, 52, { align: 'center' });
+      doc.text('ONIX', 44, 15);
+      doc.setFontSize(14);
+      doc.text('SPORT CENTER', 36, 21);
+      doc.setFontSize(12);
       
       // Información del cliente
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Cliente: ${selectedMember?.name} ${selectedMember?.lastname}`, 5, 62);
-      doc.text(`CI: ${selectedMember?.ci || 'N/A'}`, 5, 68);
+      doc.text(`Cliente: ${selectedMember?.name} ${selectedMember?.lastname}`, 5, 35);
+      doc.text(`CI: ${selectedMember?.ci || 'N/A'}`, 5, 40);
       
       // Información de la membresía
-      doc.text('RECIBO DE MEMBRESÍA', 40, 78, { align: 'center' });
-      doc.text(`ID Membresía: ${membership.id}`, 5, 88);
-      doc.text(`Plan: ${membership.name || 'Estándar'}`, 5, 94);
-      doc.text(`Monto: ${membership.amount} Bs.`, 5, 100);
-      doc.text(`Fecha Inicio: ${formatDate(membership.initDate)}`, 5, 106);
-      doc.text(`Fecha Fin: ${formatDate(membership.finishDate)}`, 5, 112);
-      
-      // Añadir línea de firma
-      doc.line(10, 140, 70, 140);
-      doc.text('Firma', 40, 145, { align: 'center' });
-      
+      doc.text('RECIBO DE MEMBRESÍA', 40, 50, { align: 'center' });
+      doc.text(`ID Membresía: ${membership.id}`, 5, 60);
+      doc.text(`Plan: ${membership.name || 'Estándar'}`, 5, 65);
+      doc.text(`Monto: ${membership.amount} Bs.`, 5, 70);
+      doc.text(`Fecha Inicio: ${formatDate(membership.initDate)}`, 5, 75);
+      doc.text(`Fecha Fin: ${formatDate(membership.finishDate)}`, 5, 80);
       // Fecha de impresión
       const now = dayjs().format('DD/MM/YYYY HH:mm');
-      doc.text(`Impreso: ${now}`, 5, 155);
+      doc.text(`Impreso: ${now}`, 5, 90);
+      doc.line(10, 100, 70, 100);
       
       // Guardar el PDF
       const pdfOutput = doc.output('blob');
@@ -190,49 +188,15 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
       
       // Intentar imprimir en la impresora térmica
       try {
-        // Primero verificamos si la API de impresión está disponible
-        if (window.navigator.printing) {
-          const printJob = await window.navigator.printing.getPrintManager();
-          const printerList = await printJob.getPrinters();
-          
-          // Buscar la impresora TM-T20IIIL
-          const thermalPrinter = printerList.find(printer => 
-            printer.name.includes('TM-T20') || 
-            printer.name.includes('EPSON')
-          );
-          
-          if (thermalPrinter) {
-            // Crear el trabajo de impresión
-            printJob.print(thermalPrinter.name, pdfOutput, {
-              copies: 1,
-              duplex: false
-            });
-            message.success('Recibo enviado a la impresora');
-          } else {
-            // Si no encuentra la impresora, abrimos la ventana de impresión y la dejamos abierta
-            const printWindow = window.open(pdfUrl);
-            if (printWindow) {
-              printWindow.onload = function() {
-                printWindow.print();
-                // Ya no cerramos la ventana automáticamente
-              };
-              message.warning('Impresora térmica no encontrada. Se ha abierto la página de impresión.');
-            } else {
-              message.warning('No se pudo abrir la ventana de impresión. Solo se ha descargado el PDF.');
-            }
-          }
-        } else {
-          // Si la API de impresión no está disponible, intentamos con la API de impresión web
           const printWindow = window.open(pdfUrl);
           if (printWindow) {
             printWindow.onload = function() {
               printWindow.print();
-              // Ya no cerramos la ventana automáticamente
             };
           } else {
             message.warning('No se pudo abrir la ventana de impresión. Solo se ha descargado el PDF.');
           }
-        }
+        
       } catch (printError) {
         console.error('Error al imprimir:', printError);
         message.warning('No se pudo imprimir directamente. Se ha descargado el PDF.');

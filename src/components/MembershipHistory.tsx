@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, Form, Input, DatePicker, Popconfirm, message } from 'antd';
-import { FaIdCard, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaIdCard, FaEdit, FaTrash, FaPrint } from 'react-icons/fa';
 import { Member, Membership, MembershipUpdateInput } from '../services/MemberService';
 import MembersService from '../services/MemberService';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 dayjs.extend(utc);
 
@@ -24,6 +26,7 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentMembership, setCurrentMembership] = useState<Membership | null>(null);
   const [loading, setLoading] = useState(false);
+  const [printLoading, setPrintLoading] = useState(false);
   const [form] = Form.useForm();
   // Add a state to track if changes were made
   const [changesMade, setChangesMade] = useState(false);
@@ -129,6 +132,121 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
     }
   };
 
+  // Nueva función para imprimir recibo
+  const handlePrintReceipt = async (membership: Membership) => {
+    try {
+      setPrintLoading(true);
+      
+      // Crear el PDF con jsPDF
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [80, 200] // Ancho típico para impresora térmica
+      });
+      
+      // Imagen de ejemplo (logo)
+      // En un entorno real, necesitarías reemplazar esto con tu imagen real
+      const logoImage = new Image();
+      logoImage.src = '../../public/onixlogo.png';
+      doc.addImage(logoImage, 'PNG', 25, 10, 30, 30);
+      
+      // Nombre del gimnasio
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ONIX', 40, 45, { align: 'center' });
+      doc.text('SPORT CENTER', 40, 52, { align: 'center' });
+      
+      // Información del cliente
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Cliente: ${selectedMember?.name} ${selectedMember?.lastname}`, 5, 62);
+      doc.text(`CI: ${selectedMember?.ci || 'N/A'}`, 5, 68);
+      
+      // Información de la membresía
+      doc.text('RECIBO DE MEMBRESÍA', 40, 78, { align: 'center' });
+      doc.text(`ID Membresía: ${membership.id}`, 5, 88);
+      doc.text(`Plan: ${membership.name || 'Estándar'}`, 5, 94);
+      doc.text(`Monto: ${membership.amount} Bs.`, 5, 100);
+      doc.text(`Fecha Inicio: ${formatDate(membership.initDate)}`, 5, 106);
+      doc.text(`Fecha Fin: ${formatDate(membership.finishDate)}`, 5, 112);
+      
+      // Añadir línea de firma
+      doc.line(10, 140, 70, 140);
+      doc.text('Firma', 40, 145, { align: 'center' });
+      
+      // Fecha de impresión
+      const now = dayjs().format('DD/MM/YYYY HH:mm');
+      doc.text(`Impreso: ${now}`, 5, 155);
+      
+      // Guardar el PDF
+      const pdfOutput = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfOutput);
+      
+      // Descargar el PDF
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = `recibo_usuario_${selectedMember.ci}_fecha_${now}.pdf`;
+      link.click();
+      
+      // Intentar imprimir en la impresora térmica
+      try {
+        // Primero verificamos si la API de impresión está disponible
+        if (window.navigator.printing) {
+          const printJob = await window.navigator.printing.getPrintManager();
+          const printerList = await printJob.getPrinters();
+          
+          // Buscar la impresora TM-T20IIIL
+          const thermalPrinter = printerList.find(printer => 
+            printer.name.includes('TM-T20') || 
+            printer.name.includes('EPSON')
+          );
+          
+          if (thermalPrinter) {
+            // Crear el trabajo de impresión
+            printJob.print(thermalPrinter.name, pdfOutput, {
+              copies: 1,
+              duplex: false
+            });
+            message.success('Recibo enviado a la impresora');
+          } else {
+            // Si no encuentra la impresora, abrimos la ventana de impresión y la dejamos abierta
+            const printWindow = window.open(pdfUrl);
+            if (printWindow) {
+              printWindow.onload = function() {
+                printWindow.print();
+                // Ya no cerramos la ventana automáticamente
+              };
+              message.warning('Impresora térmica no encontrada. Se ha abierto la página de impresión.');
+            } else {
+              message.warning('No se pudo abrir la ventana de impresión. Solo se ha descargado el PDF.');
+            }
+          }
+        } else {
+          // Si la API de impresión no está disponible, intentamos con la API de impresión web
+          const printWindow = window.open(pdfUrl);
+          if (printWindow) {
+            printWindow.onload = function() {
+              printWindow.print();
+              // Ya no cerramos la ventana automáticamente
+            };
+          } else {
+            message.warning('No se pudo abrir la ventana de impresión. Solo se ha descargado el PDF.');
+          }
+        }
+      } catch (printError) {
+        console.error('Error al imprimir:', printError);
+        message.warning('No se pudo imprimir directamente. Se ha descargado el PDF.');
+      }
+      
+      message.success('Recibo generado correctamente');
+    } catch (error) {
+      console.error('Error al generar el recibo:', error);
+      message.error('Error al generar el recibo');
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -183,6 +301,15 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
                           icon={<FaEdit />} 
                           onClick={(e) => handleEdit(membership, e)}
                           className="text-blue-500 mr-2"
+                          title="Editar"
+                        />
+                        <Button 
+                          type="text" 
+                          icon={<FaPrint />} 
+                          onClick={() => handlePrintReceipt(membership)}
+                          loading={printLoading}
+                          className="text-green-500 mr-2"
+                          title="Imprimir recibo"
                         />
                         <Popconfirm
                           title="¿Estás seguro de eliminar esta membresía?"
@@ -194,6 +321,7 @@ const MembershipHistory: React.FC<MembershipHistoryProps> = ({
                             type="text" 
                             icon={<FaTrash />} 
                             className="text-red-500"
+                            title="Eliminar"
                           />
                         </Popconfirm>
                       </td>
